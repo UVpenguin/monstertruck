@@ -23,16 +23,22 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 255)
 pwmB = GPIO.PWM(enB, 255) 
 
-GPIO.output(in1, 1)
-GPIO.output(in2, 1)
+# move forward
+GPIO.output(in1, HIGH)
+GPIO.output(in2, LOW)
+GPIO.output(in3, HIGH)
+GPIO.output(in4, LOW)
 
 pwmA.start(100)
 pwmB.start(100)
 
 time.sleep(2) #Delay
 
-GPIO.output(in1, 0)
-GPIO.output(in2, 0)
+# Stop
+GPIO.output(in1, LOW)
+GPIO.output(in2, LOW)
+GPIO.output(in3, LOW)
+GPIO.output(in4, LOW)
 
 time.sleep(2) #Delay
 pwmA.stop()
