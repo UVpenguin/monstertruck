@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-GPIO.setmode(GPIO.BCM) 
+GPIO.setmode(GPIO.BOARD) 
 GPIO.setwarnings(False)
 
 enA = 12
@@ -19,8 +19,11 @@ GPIO.setup(in3, GPIO.OUT)
 GPIO.setup(in4, GPIO.OUT) 
 
 while True:
+    GPIO.output
     GPIO.output(in1, 1)
     GPIO.output(in2, 1)
+    GPIO.PWM(enA, 255)
+    GPIO.PWM(enB, 255) 
 
     time.sleep(2) #Delay
 
