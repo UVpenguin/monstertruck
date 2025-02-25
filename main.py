@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import time
 
+GPIO.cleanup()
+
 GPIO.setmode(GPIO.BOARD) 
 GPIO.setwarnings(False)
 
@@ -33,5 +35,5 @@ GPIO.output(in1, 0)
 GPIO.output(in2, 0)
 
 time.sleep(2) #Delay
-
-GPIO.cleanup()
+pwmA.stop()
+pwmB.stop()
