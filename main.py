@@ -23,8 +23,8 @@ GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT) 
 GPIO.setup(in4, GPIO.OUT) 
 
-pwmA = GPIO.PWM(enA, 255)
-pwmB = GPIO.PWM(enB, 255) 
+pwmA = GPIO.PWM(enA, 1000)
+pwmB = GPIO.PWM(enB, 1000) 
 
 # move forward
 GPIO.output(in1, HIGH)
