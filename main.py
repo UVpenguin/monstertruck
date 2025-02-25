@@ -21,17 +21,17 @@ GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT) 
 GPIO.setup(in4, GPIO.OUT) 
 
-pwmA = GPIO.PWM(enA, 1000)
-pwmB = GPIO.PWM(enB, 1000)
+pwmA = GPIO.PWM(enA, 255)
+pwmB = GPIO.PWM(enB, 255)
 
-pwmA.start(50)
-pwmB.start(50)
+pwmA.start(100)
+pwmB.start(100)
 
 forward()
-time.sleep(2) #Delay
+time.sleep(2) 
 
 right()
-time.sleep(2) #Delay
+time.sleep(2) 
 
 left()
 time.sleep(2)
