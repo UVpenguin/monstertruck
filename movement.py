@@ -16,13 +16,13 @@ def forward():
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
-def right():
+def left():
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
-def left():
+def right():
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
