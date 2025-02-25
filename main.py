@@ -24,8 +24,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 255)
 pwmB = GPIO.PWM(enB, 255)
 
-pwmA.start(100)
-pwmB.start(100)
+pwmA.start(50)
+pwmB.start(50)
 
 forward()
 time.sleep(2) 
