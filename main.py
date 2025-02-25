@@ -6,6 +6,9 @@ GPIO.cleanup()
 GPIO.setmode(GPIO.BOARD) 
 GPIO.setwarnings(False)
 
+HIGH = 1
+LOW = 0
+
 enA = 12
 enB = 32
 in1 = 7
