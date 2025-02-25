@@ -1,13 +1,11 @@
 import RPi.GPIO as GPIO
 import time
+from movement import *
 
 GPIO.cleanup()
 
 GPIO.setmode(GPIO.BOARD) 
 GPIO.setwarnings(False)
-
-HIGH = 1
-LOW = 0
 
 enA = 12
 enB = 32
@@ -24,25 +22,20 @@ GPIO.setup(in3, GPIO.OUT)
 GPIO.setup(in4, GPIO.OUT) 
 
 pwmA = GPIO.PWM(enA, 1000)
-pwmB = GPIO.PWM(enB, 1000) 
-
-# move forward
-GPIO.output(in1, HIGH)
-GPIO.output(in2, LOW)
-GPIO.output(in3, HIGH)
-GPIO.output(in4, LOW)
+pwmB = GPIO.PWM(enB, 1000)
 
 pwmA.start(100)
 pwmB.start(100)
 
+forward()
 time.sleep(2) #Delay
 
-# Stop
-GPIO.output(in1, LOW)
-GPIO.output(in2, LOW)
-GPIO.output(in3, LOW)
-GPIO.output(in4, LOW)
-
+right()
 time.sleep(2) #Delay
+
+left()
+time.sleep(2)
+
+stop()
 pwmA.stop()
 pwmB.stop()
