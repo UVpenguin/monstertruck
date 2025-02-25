@@ -20,12 +20,12 @@ GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT) 
 GPIO.setup(in4, GPIO.OUT) 
 
+pwmA = GPIO.PWM(enA, 255)
+pwmB = GPIO.PWM(enB, 255) 
+
 while True:
     GPIO.output(in1, 1)
     GPIO.output(in2, 1)
-
-    pwmA = GPIO.PWM(enA, 255)
-    pwmB = GPIO.PWM(enB, 255) 
 
     pwmA.start(50)
     pwmB.start(50)
