@@ -16,7 +16,7 @@ def forward():
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
-def left():
+def backward():
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
@@ -25,6 +25,12 @@ def left():
 def right():
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
+    GPIO.output(in3, LOW)
+    GPIO.output(in4, HIGH)
+
+def left():
+    GPIO.output(in1, LOW)
+    GPIO.output(in2, HIGH)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
 
