@@ -27,8 +27,8 @@ while True:
     GPIO.output(in1, 1)
     GPIO.output(in2, 1)
 
-    pwmA.start(50)
-    pwmB.start(50)
+    pwmA.start(100)
+    pwmB.start(100)
 
     time.sleep(2) #Delay
 
@@ -36,5 +36,3 @@ while True:
     GPIO.output(in2, 0)
 
     time.sleep(2) #Delay
-    
-    GPIO.cleanup
