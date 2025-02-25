@@ -11,6 +11,8 @@ in2 = 11
 in3 = 13
 in4 = 15
 
+GPIO.cleanup
+
 GPIO.setup(enA, GPIO.OUT) 
 GPIO.setup(enB, GPIO.OUT) 
 GPIO.setup(in1, GPIO.OUT) 
