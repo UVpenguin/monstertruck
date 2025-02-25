@@ -19,11 +19,14 @@ GPIO.setup(in3, GPIO.OUT)
 GPIO.setup(in4, GPIO.OUT) 
 
 while True:
-    GPIO.output
     GPIO.output(in1, 1)
     GPIO.output(in2, 1)
-    GPIO.PWM(enA, 255)
-    GPIO.PWM(enB, 255) 
+
+    pwmA = GPIO.PWM(enA, 255)
+    pwmB = GPIO.PWM(enB, 255) 
+
+    pwmA.start(50)
+    pwmB.start(50)
 
     time.sleep(2) #Delay
 
