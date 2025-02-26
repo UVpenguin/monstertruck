@@ -1,18 +1,18 @@
 import RPi.GPIO as GPIO
 import time
-from movement import *
+import movement as motor # contains all 
 
 GPIO.cleanup()
 
 GPIO.setmode(GPIO.BOARD) 
 GPIO.setwarnings(False)
 
-enA = 12
-enB = 32
-in1 = 7
-in2 = 11
-in3 = 13
-in4 = 15
+enA = motor.enA
+enB = motor.enB
+in1 = motor.in1
+in2 = motor.in2
+in3 = motor.in3
+in4 = motor.in4
 
 GPIO.setup(enA, GPIO.OUT) 
 GPIO.setup(enB, GPIO.OUT) 
@@ -27,15 +27,15 @@ pwmB = GPIO.PWM(enB, 1000)
 pwmA.start(50)
 pwmB.start(50)
 
-forward()
+motor.forward()
 time.sleep(2) 
 
-right()
+motor.right()
 time.sleep(2) 
 
-left()
+motor.left()
 time.sleep(2)
 
-stop()
+motor.stop()
 pwmA.stop()
 pwmB.stop()

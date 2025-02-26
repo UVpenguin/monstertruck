@@ -1,7 +1,9 @@
 import RPi.GPIO as GPIO
 
+
 HIGH = 1
 LOW = 0
+
 
 enA = 12
 enB = 32
@@ -10,31 +12,37 @@ in2 = 11
 in3 = 13
 in4 = 15
 
-def forward(): 
+
+def forward():
+    """Move the motor forward"""
     GPIO.output(in1, LOW)
     GPIO.output(in2, HIGH)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
 def right():
+    """Turn the motor right"""
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
 def backward():
+    """Move the motor backward"""
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
 
 def left():
+    """Turn the motor left"""
     GPIO.output(in1, LOW)
     GPIO.output(in2, HIGH)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
 
 def stop():
+    """Stop the motor"""
     GPIO.output(in1, LOW)
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
