@@ -24,8 +24,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
 
-pwmA.start(70)
-pwmB.start(70)
+pwmA.start(90)
+pwmB.start(90)
 
 motor.right()
 time.sleep(1) 
