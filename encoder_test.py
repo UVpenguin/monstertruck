@@ -16,6 +16,16 @@ in4 = motor.in4
 
 encoder = 16
 
+# sets motor pins as write
+GPIO.setup(enA, GPIO.OUT)
+GPIO.setup(enB, GPIO.OUT)
+GPIO.setup(in1, GPIO.OUT)
+GPIO.setup(in2, GPIO.OUT)
+GPIO.setup(in3, GPIO.OUT)
+GPIO.setup(in4, GPIO.OUT)
+
+GPIO.setup(encoder, GPIO.IN)  # read encoder pin
+
 # encoder variables
 lastState = GPIO.input(
     encoder
@@ -27,16 +37,6 @@ stateCountTotal = 0
 circ = 207  # mm
 statesPerRotation = 40
 distancePerStep = circ / statesPerRotation
-
-# sets motor pins as write
-GPIO.setup(enA, GPIO.OUT)
-GPIO.setup(enB, GPIO.OUT)
-GPIO.setup(in1, GPIO.OUT)
-GPIO.setup(in2, GPIO.OUT)
-GPIO.setup(in3, GPIO.OUT)
-GPIO.setup(in4, GPIO.OUT)
-
-GPIO.setup(encoder, GPIO.IN)  # read encoder pin
 
 # pwm pins set to 1000Hz
 pwmA = GPIO.PWM(enA, 1000)
