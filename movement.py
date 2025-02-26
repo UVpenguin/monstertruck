@@ -73,4 +73,4 @@ def right90():
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
-    time.sleep(0.8)
+    time.sleep(0.75)
