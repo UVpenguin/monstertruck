@@ -27,8 +27,8 @@ pwmB = GPIO.PWM(enB, 1000)
 pwmA.start(100)
 pwmB.start(100)
 
-motor.right()
-time.sleep(0.75) 
+motor.left()
+time.sleep(1)
 
 motor.stop()
 pwmA.stop()
