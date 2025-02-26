@@ -28,7 +28,7 @@ pwmA.start(50)
 pwmB.start(50)
 
 motor.right()
-time.sleep(2) 
+time.sleep(1) 
 
 motor.stop()
 pwmA.stop()
