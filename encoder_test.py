@@ -1,5 +1,4 @@
 import RPi.GPIO as GPIO
-import time
 import movement as motor
 
 GPIO.cleanup()
@@ -29,7 +28,7 @@ GPIO.setup(encoder, GPIO.IN)  # read encoder pin
 # encoder variables
 lastState = GPIO.input(
     encoder
-)  # sets the intial state of the variable to the current state the encoder is in at init
+)  # sets the intial state of the variable to the inital state of encoder
 rotationCount = 0
 stateCount = 0
 stateCountTotal = 0

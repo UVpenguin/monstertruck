@@ -20,12 +20,14 @@ def forward():
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
 
+
 def right():
     """Turn the motor right"""
     GPIO.output(in1, HIGH)
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
+
 
 def backward():
     """Move the motor backward"""
@@ -34,12 +36,14 @@ def backward():
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
 
+
 def left():
     """Turn the motor left"""
     GPIO.output(in1, LOW)
     GPIO.output(in2, HIGH)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
+
 
 def stop():
     """Stop the motor"""
