@@ -34,7 +34,7 @@ rotationCount = 0
 stateCount = 0
 stateCountTotal = 0
 
-circ = 207  # mm
+circ = 21.6  # cm
 statesPerRotation = 40
 distancePerStep = circ / statesPerRotation
 
