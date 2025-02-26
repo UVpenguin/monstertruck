@@ -21,8 +21,8 @@ GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT) 
 GPIO.setup(in4, GPIO.OUT) 
 
-pwmA = GPIO.PWM(enA, 10)
-pwmB = GPIO.PWM(enB, 10)
+pwmA = GPIO.PWM(enA, 100000)
+pwmB = GPIO.PWM(enB, 100000)
 
 pwmA.start(100)
 pwmB.start(100)
