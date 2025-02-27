@@ -60,7 +60,6 @@ def stop():
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
     GPIO.output(in4, LOW)
-    stop()
 
 
 def left90():
