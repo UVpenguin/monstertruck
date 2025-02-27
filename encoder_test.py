@@ -46,8 +46,9 @@ pwmB.start(100)
 
 
 def encoder_callback(channel):
-    print("running callback")
     global stateCount, stateCountTotal, rotationCount, statesPerRotation, currentState, lastState  # noqa: E501
+
+    currentState = GPIO.input(encoder)
 
     if currentState != lastState:
         lastState = currentState
@@ -59,7 +60,9 @@ def encoder_callback(channel):
         stateCount = 0
 
 
-GPIO.add_event_detect(encoder, GPIO.RISING, callback=encoder_callback, bouncetime=10)  # noqa: E501
+GPIO.add_event_detect(
+    encoder, GPIO.RISING, callback=encoder_callback, bouncetime=10
+)  # noqa: E501
 
 try:
     while True:
