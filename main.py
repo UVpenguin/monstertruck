@@ -1,7 +1,5 @@
 import RPi.GPIO as GPIO
-import time
 import movement as motor
-import keyboard
 
 GPIO.cleanup()
 
