@@ -31,12 +31,16 @@ try:
         userInput = input()
 
         if userInput == "w":
+            print("moving forward")
             motor.forward()
         if userInput == "s":
+            print("moving backward")
             motor.backward()
         if userInput == "d":
+            print("turning right")
             motor.right()
         if userInput == "a":
+            print("turning left")
             motor.left()
         if userInput == "g":
             motor.right90()
