@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import time
 
 
 HIGH = 1
@@ -67,3 +68,9 @@ def right90():
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
+
+
+def precise_sleep(duration):
+    start = time.monotonic()
+    while (time.monotonic() - start) < duration:
+        pass

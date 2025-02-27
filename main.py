@@ -1,6 +1,5 @@
 import RPi.GPIO as GPIO
 import movement as motor
-import time
 
 GPIO.cleanup()
 GPIO.setmode(GPIO.BOARD)
@@ -34,22 +33,22 @@ try:
 
         if userInput == "w":
             motor.forward()
-            time.sleep(1)
-        if userInput == "s":
+            motor.precise_sleep(1)  # Replaced time.sleep
+        elif userInput == "s":
             motor.backward()
-            time.sleep(1)
-        if userInput == "d":
+            motor.precise_sleep(1)
+        elif userInput == "d":
             motor.right()
-            time.sleep(1)
-        if userInput == "a":
+            motor.precise_sleep(1)
+        elif userInput == "a":
             motor.left()
-            time.sleep(1)
-        if userInput == "g":
+            motor.precise_sleep(1)
+        elif userInput == "g":
             motor.right()
-            time.sleep(0.75)
-        if userInput == "f":
+            motor.precise_sleep(0.75)  # Adjusted for 90-degree turn
+        elif userInput == "f":
             motor.left()
-            time.sleep(0.75)
+            motor.precise_sleep(0.75)
         motor.stop()
 except KeyboardInterrupt:
     motor.stop()
