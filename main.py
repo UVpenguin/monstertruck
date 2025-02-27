@@ -42,6 +42,7 @@ try:
             motor.right()
         if userInput == "f":
             motor.left()
+        motor.stop()
 except KeyboardInterrupt:
     motor.stop()
     pwmA.stop()
