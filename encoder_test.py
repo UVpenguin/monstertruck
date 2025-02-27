@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import movement as motor
+import keyboard
 
 GPIO.cleanup()
 
@@ -77,7 +78,8 @@ try:
         #     rotationCount += 1
         #     stateCount = 0
         distance = distancePerStep * stateCountTotal
-        print("Distance", distance)
+        if keyboard.is_pressed("d"):
+            print("Distance", distance)
 
 except KeyboardInterrupt:  # ctrl+C
     motor.stop()
