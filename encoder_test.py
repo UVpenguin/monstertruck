@@ -33,7 +33,7 @@ rotationCount = 0
 stateCount = 0
 stateCountTotal = 0
 
-circ = 21.6  # cm
+circ = 20.43  # cm
 statesPerRotation = 40
 distancePerStep = circ / statesPerRotation
 
@@ -44,18 +44,32 @@ pwmB = GPIO.PWM(enB, 1000)
 pwmA.start(100)
 pwmB.start(100)
 
+
+def encoder_callback():
+    global stateCount, stateCountTotal, rotationCount, statesPerRotation
+
+    stateCount += 1
+    stateCountTotal += 1
+
+    if stateCount == statesPerRotation:
+        rotationCount += 1
+        stateCount = 0
+
+
+GPIO.add_event_detect(encoder, GPIO.RISING, callback=encoder_callback)
+
 try:
     while True:
-        currentState = GPIO.input(encoder)
+        # currentState = GPIO.input(encoder)
         # motor.forward()
 
-        if currentState != lastState:
-            lastState = currentState
-            stateCount += 1
-            stateCountTotal += 1
-        if stateCount == statesPerRotation:
-            rotationCount += 1
-            stateCount = 0
+        # if currentState != lastState:
+        #     lastState = currentState
+        #     stateCount += 1
+        #     stateCountTotal += 1
+        # if stateCount == statesPerRotation:
+        #     rotationCount += 1
+        #     stateCount = 0
         distance = distancePerStep * stateCountTotal
         print("Distance", distance)
 
