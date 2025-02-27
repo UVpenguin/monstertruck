@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import movement as motor
+import time
 
 GPIO.cleanup()
 
@@ -21,16 +22,22 @@ try:
 
         if userInput == "w":
             motor.forward()
+            time.sleep(1)
         if userInput == "s":
             motor.backward()
+            time.sleep(1)
         if userInput == "d":
             motor.right()
+            time.sleep(1)
         if userInput == "a":
             motor.left()
+            time.sleep(1)
         if userInput == "g":
             motor.right()
+            time.sleep(0.75)
         if userInput == "f":
             motor.left()
+            time.sleep(0.75)
         motor.stop()
 except KeyboardInterrupt:
     motor.stop()
