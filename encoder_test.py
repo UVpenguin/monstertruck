@@ -45,7 +45,7 @@ pwmA.start(100)
 pwmB.start(100)
 
 
-def encoder_callback():
+def encoder_callback(channel):
     print("running callback")
     global stateCount, stateCountTotal, rotationCount, statesPerRotation
 
