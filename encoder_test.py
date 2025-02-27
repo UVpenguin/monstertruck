@@ -57,7 +57,7 @@ def encoder_callback(channel):
         stateCount = 0
 
 
-GPIO.add_event_detect(encoder, GPIO.RISING, callback=encoder_callback)
+GPIO.add_event_detect(encoder, GPIO.RISING, callback=encoder_callback, bouncetime=10)
 
 try:
     while True:
