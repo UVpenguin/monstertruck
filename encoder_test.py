@@ -46,6 +46,7 @@ pwmB.start(100)
 
 
 def encoder_callback():
+    print("running callback")
     global stateCount, stateCountTotal, rotationCount, statesPerRotation
 
     stateCount += 1
