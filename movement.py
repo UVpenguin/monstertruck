@@ -12,25 +12,6 @@ in2 = 11
 in3 = 13
 in4 = 15
 
-global pwmA
-global pwmB
-
-
-def setup():
-    """sets up motor output pins and pwm frequency and duty cycle"""
-    GPIO.setup(enA, GPIO.OUT)
-    GPIO.setup(enB, GPIO.OUT)
-    GPIO.setup(in1, GPIO.OUT)
-    GPIO.setup(in2, GPIO.OUT)
-    GPIO.setup(in3, GPIO.OUT)
-    GPIO.setup(in4, GPIO.OUT)
-
-    pwmA = GPIO.PWM(enA, 1000)
-    pwmB = GPIO.PWM(enB, 1000)
-
-    pwmA.start(100)
-    pwmB.start(100)
-
 
 def forward():
     """Move the motor forward"""
