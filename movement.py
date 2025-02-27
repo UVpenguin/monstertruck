@@ -60,6 +60,7 @@ def left90():
     GPIO.output(in2, HIGH)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
+    precise_sleep(0.75)
 
 
 def right90():
@@ -68,6 +69,7 @@ def right90():
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
+    precise_sleep(0.75)
 
 
 def precise_sleep(duration):

@@ -33,7 +33,7 @@ try:
 
         if userInput == "w":
             motor.forward()
-            motor.precise_sleep(1)  # Replaced time.sleep
+            motor.precise_sleep(1)
         elif userInput == "s":
             motor.backward()
             motor.precise_sleep(1)
@@ -45,10 +45,8 @@ try:
             motor.precise_sleep(1)
         elif userInput == "g":
             motor.right()
-            motor.precise_sleep(0.75)  # Adjusted for 90-degree turn
         elif userInput == "f":
             motor.left()
-            motor.precise_sleep(0.75)
         motor.stop()
 except KeyboardInterrupt:
     motor.stop()
