@@ -12,8 +12,8 @@ in2 = 11
 in3 = 13
 in4 = 15
 
-pwmA = GPIO.PWM(enA, 1000)
-pwmB = GPIO.PWM(enB, 1000)
+global pwmA
+global pwmB
 
 
 def setup():
@@ -24,6 +24,9 @@ def setup():
     GPIO.setup(in2, GPIO.OUT)
     GPIO.setup(in3, GPIO.OUT)
     GPIO.setup(in4, GPIO.OUT)
+
+    pwmA = GPIO.PWM(enA, 1000)
+    pwmB = GPIO.PWM(enB, 1000)
 
     pwmA.start(100)
     pwmB.start(100)

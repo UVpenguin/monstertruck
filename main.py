@@ -3,9 +3,9 @@ import movement as motor
 import time
 
 GPIO.cleanup()
-
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
+
 
 enA = motor.enA
 enB = motor.enB
