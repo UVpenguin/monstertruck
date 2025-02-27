@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import time
 
 
 HIGH = 1
@@ -51,3 +52,21 @@ def stop():
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
     GPIO.output(in4, LOW)
+
+
+def left90():
+    """Turn the motor leftF by 90 degrees. uses measured time delays"""
+    GPIO.output(in1, LOW)
+    GPIO.output(in2, HIGH)
+    GPIO.output(in3, LOW)
+    GPIO.output(in4, HIGH)
+    time.sleep(0.75)
+
+
+def right90():
+    """Turn the motor right by 90 degrees. uses measured time delays"""
+    GPIO.output(in1, HIGH)
+    GPIO.output(in2, LOW)
+    GPIO.output(in3, HIGH)
+    GPIO.output(in4, LOW)
+    time.sleep(0.8)
