@@ -20,6 +20,7 @@ def forward():
     GPIO.output(in2, HIGH)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
+    time.sleep(1)
 
 
 def right():
@@ -28,6 +29,7 @@ def right():
     GPIO.output(in2, LOW)
     GPIO.output(in3, HIGH)
     GPIO.output(in4, LOW)
+    time.sleep(1)
 
 
 def backward():
@@ -36,6 +38,7 @@ def backward():
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
+    time.sleep(1)
 
 
 def left():
@@ -44,6 +47,7 @@ def left():
     GPIO.output(in2, HIGH)
     GPIO.output(in3, LOW)
     GPIO.output(in4, HIGH)
+    time.sleep(1)
 
 
 def stop():
@@ -52,6 +56,7 @@ def stop():
     GPIO.output(in2, LOW)
     GPIO.output(in3, LOW)
     GPIO.output(in4, LOW)
+    time.sleep(1)
 
 
 def left90():
