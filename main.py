@@ -13,6 +13,8 @@ in2 = motor.in2
 in3 = motor.in3
 in4 = motor.in4
 
+camera = 19
+
 GPIO.setup(enA, GPIO.OUT)
 GPIO.setup(enB, GPIO.OUT)
 GPIO.setup(in1, GPIO.OUT)
