@@ -71,7 +71,7 @@ while True:
         # Stop if no contours detected
         stop()
 
-    cv2.imshow("Camera Feed", frame)
+    cv2.imshow("Camera Feed", binary_frame)
 
     # Press 'q' to exit the loop
 
