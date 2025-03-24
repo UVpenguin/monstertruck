@@ -1,6 +1,7 @@
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
 import cv2
+import movement as motor
 from movement import left, right, forward, stop  # Import motor control functions
 
 picam2 = Picamera2()
