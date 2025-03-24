@@ -1,21 +1,12 @@
+from picamera2 import Picamera2
 import cv2
 
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration())
+picam2.start()
 
-if not cap.isOpened():
-    print("Error: Could not open camera.")
-    exit()
+frame = picam2.capture_array()
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        print("Error: Failed to capture frame.")
-        break
-
-    cv2.imshow('Camera Test', frame)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to exit
-        break
-
-cap.release()
+cv2.imshow("Camera Feed", frame)
+cv2.waitKey(0)
 cv2.destroyAllWindows()
