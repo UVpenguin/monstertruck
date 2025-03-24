@@ -7,5 +7,6 @@ picam2.start()
 
 frame = picam2.capture_array()
 
-cv2.imwrite("test.jpg", frame)  # Save instead of showing
-print("Image saved as test.jpg")
+cv2.imshow("Camera Feed", frame)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
