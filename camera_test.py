@@ -13,9 +13,9 @@ THRESHOLD_MAX = 180
 THRESHOLD_MIN = 40
 TH_ITERATIONS = 10
 
-# Desired white pixel percentage (in ROI)
-WHITE_MIN = 3  # in percent
-WHITE_MAX = 12  # in percent
+# Desired “white” pixel percentage in the ROI (but this “white” is actually the black line in the inverted image)
+LINE_MIN = 3   # in percent
+LINE_MAX = 12  # in percent
 
 # Region of interest parameters (process lower part of the image)
 ROI_Y_START_RATIO = 0.6  # Start cropping from 60% of frame height
@@ -53,7 +53,6 @@ pwmB.start(100)
 
 # ---------- Helper Functions ----------
 
-
 def crop_roi(image):
     """
     Crop the region of interest (ROI) from the grayscale image.
@@ -65,46 +64,47 @@ def crop_roi(image):
     roi = image[y_start:height, :]
     return roi, y_start
 
-
-def compute_white_percentage(roi):
+def compute_line_percentage(roi):
     """
-    Computes the percentage of white (non-zero) pixels in the ROI.
+    Computes the percentage of non-zero (white) pixels in the ROI.
+    In our inverted image, these “white” pixels represent the black line.
     """
-    white_pixels = cv2.countNonZero(roi)
+    line_pixels = cv2.countNonZero(roi)
     total_pixels = roi.shape[0] * roi.shape[1]
-    perc = (white_pixels / total_pixels) * 100
+    perc = (line_pixels / total_pixels) * 100
     return perc
 
-
-def balance_pic(gray_image, threshold_value):
+def balance_threshold_for_black_line(gray_image, threshold_value):
     """
-    Dynamically adjust the threshold value until the white percentage in the ROI
-    falls between WHITE_MIN and WHITE_MAX.
-    Returns the binary ROI image, the updated threshold value, and the y_start offset.
+    Dynamically adjust the threshold value until the percentage of the black line
+    (which appears white in the inverted thresholded image) in the ROI
+    falls between LINE_MIN and LINE_MAX.
+
+    Returns:
+      - roi_final: the thresholded (inverted) ROI
+      - adjusted_threshold: the updated threshold value
+      - y_start: offset for the cropped ROI
     """
     direction = 0  # 1 means increasing threshold; -1 means decreasing
     adjusted_threshold = threshold_value
 
-    # We repeatedly threshold and measure the white percentage
-    for i in range(TH_ITERATIONS):
-        _, binary_full = cv2.threshold(
-            gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY
-        )
+    for _ in range(TH_ITERATIONS):
+        # Apply inverted threshold to detect black as white
+        _, binary_full = cv2.threshold(gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV)
         roi, _ = crop_roi(binary_full)
-        perc = compute_white_percentage(roi)
+        perc = compute_line_percentage(roi)
 
-        # If white percentage is too high, increase threshold
-        if perc > WHITE_MAX:
+        # If line percentage is too high, we increase threshold
+        if perc > LINE_MAX:
             if adjusted_threshold >= THRESHOLD_MAX:
                 break
-            # If we already tried lowering, then stop
             if direction == -1:
                 break
             adjusted_threshold += 10
             direction = 1
 
-        # If white percentage is too low, decrease threshold
-        elif perc < WHITE_MIN:
+        # If line percentage is too low, we decrease threshold
+        elif perc < LINE_MIN:
             if adjusted_threshold <= THRESHOLD_MIN:
                 break
             if direction == 1:
@@ -113,85 +113,82 @@ def balance_pic(gray_image, threshold_value):
             direction = -1
 
         else:
-            # Percentage is within desired range, stop adjusting
+            # Percentage is within desired range, no need to adjust more
             break
 
-    # After adjusting threshold, do one final threshold
-    _, final_binary_full = cv2.threshold(
-        gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY
-    )
+    # Apply the final adjusted threshold
+    _, final_binary_full = cv2.threshold(gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV)
     roi_final, y_start = crop_roi(final_binary_full)
     return roi_final, adjusted_threshold, y_start
-
 
 # ---------- Main Loop ----------
 current_threshold = THRESHOLD_INIT
 
-while True:
-    # Capture frame from PiCamera2
-    frame = picam2.capture_array()
+try:
+    while True:
+        # Capture frame from PiCamera2
+        frame = picam2.capture_array()
 
-    # Convert to grayscale
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Convert to grayscale
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Dynamically adjust threshold for the bottom ROI
-    binary_roi, current_threshold, y_start = balance_pic(gray_frame, current_threshold)
+        # Dynamically adjust threshold for the bottom ROI to detect the black line
+        binary_roi, current_threshold, y_start = balance_threshold_for_black_line(
+            gray_frame, current_threshold
+        )
 
-    # Find contours within the ROI
-    contours, _ = cv2.findContours(
-        binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
+        # Find contours in the inverted-threshold ROI
+        contours, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    if contours:
-        # Use the largest contour (assumed to be the line)
-        largest_contour = max(contours, key=cv2.contourArea)
-        M = cv2.moments(largest_contour)
+        if contours:
+            # Use the largest contour (assumed to be the black line)
+            largest_contour = max(contours, key=cv2.contourArea)
+            M = cv2.moments(largest_contour)
 
-        if M["m00"] > 0:
-            # Calculate center of contour in ROI coordinates
-            cX_roi = int(M["m10"] / M["m00"])
-            cY_roi = int(M["m01"] / M["m00"])
+            if M["m00"] > 0:
+                # Calculate center of contour in ROI coordinates
+                cX_roi = int(M["m10"] / M["m00"])
+                cY_roi = int(M["m01"] / M["m00"])
 
-            # Convert ROI coordinates to full image coordinates
-            cX = cX_roi
-            cY = cY_roi + y_start
+                # Convert ROI coordinates to full image coordinates
+                cX = cX_roi
+                cY = cY_roi + y_start
 
-            # For debug: draw the contour on the *original* frame in color
-            # We need to offset each point in the contour by y_start.
-            # Create a shifted version of the contour to draw on the original frame
-            shifted_contour = []
-            for point in largest_contour:
-                x, y = point[0]
-                shifted_contour.append([[x, y + y_start]])
-            shifted_contour = np.array(shifted_contour)
+                # For debug: draw the contour on the original frame in color
+                shifted_contour = []
+                for point in largest_contour:
+                    x, y = point[0]
+                    shifted_contour.append([[x, y + y_start]])
+                shifted_contour = np.array(shifted_contour)
 
-            cv2.drawContours(frame, [shifted_contour], -1, (0, 255, 0), 3)
-            cv2.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # Mark center
+                cv2.drawContours(frame, [shifted_contour], -1, (0, 255, 0), 3)
+                cv2.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # Mark center
 
-            # Determine turning action based on center position of the contour
-            roi_width = binary_roi.shape[1]
-            roi_center = roi_width // 2
+                # Determine turning action based on center position
+                roi_width = binary_roi.shape[1]
+                roi_center = roi_width // 2
 
-            if cX_roi < roi_center - CENTER_MARGIN:
-                left()
-            elif cX_roi > roi_center + CENTER_MARGIN:
-                right()
+                if cX_roi < roi_center - CENTER_MARGIN:
+                    left()
+                elif cX_roi > roi_center + CENTER_MARGIN:
+                    right()
+                else:
+                    forward()
             else:
-                forward()
+                stop()
         else:
+            # Stop if no contour is detected
             stop()
-    else:
-        # Stop if no contour is detected
-        stop()
 
-    # Show both the binary ROI (for debugging) and the main frame with color contour
-    cv2.imshow("ROI Binary", binary_roi)
-    cv2.imshow("Line Detection", frame)
+        # Show both the binary ROI (for debugging) and the main frame with color contour
+        cv2.imshow("ROI Binary (Inverted)", binary_roi)
+        cv2.imshow("Line Detection (Original Frame)", frame)
 
-    # Allow a small delay and exit on pressing 'q'
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+        # Allow a small delay and exit on pressing 'q'
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
 
-# Cleanup resources
-cv2.destroyAllWindows()
-GPIO.cleanup()
+finally:
+    # Cleanup resources
+    cv2.destroyAllWindows()
+    GPIO.cleanup()
