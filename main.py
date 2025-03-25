@@ -33,8 +33,7 @@ pwmB.start(70)
 
 ## CAMERA SETUP
 picam2 = Picamera2()
-config = picam2.create_video_configuration(main={"size": (150, 150)})
-picam2.configure(config)
+picam2.configure(picam2.create_preview_configuration())
 picam2.set_controls({"FrameRate": 60})
 picam2.start()
 
@@ -48,7 +47,7 @@ try:
         invert_thresh = ~thresh  # inverts threshold
 
         contours, _ = cv.findContours(
-            invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE
+            invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
         )
 
         if contours:
