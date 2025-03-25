@@ -29,8 +29,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
 
-pwmA.start(100)
-pwmB.start(100)
+pwmA.start(80)
+pwmB.start(80)
 
 ## CAMERA SETUP
 picam2 = Picamera2()
@@ -44,9 +44,11 @@ try:
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         ret, thresh = cv.threshold(gray_frame, 150, 255, cv.THRESH_BINARY)
-        invert_thresh = ~thresh
+        invert_thresh = ~thresh  # inverts threshold
 
-        contours, _ = cv.findContours(invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(
+            invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+        )
 
         if contours:
             largest_contour = max(contours, key=cv.contourArea)
