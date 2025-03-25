@@ -1,10 +1,9 @@
-from picamera2 import Picamera2
+from picamera2 import Picamera2  # type: ignore
 import RPi.GPIO as GPIO
 import cv2
 import numpy as np
 import movement as motor
 from movement import left, right, forward, stop  # Motor control functions
-import time
 
 # ---------- Configuration Parameters ----------
 # Initial threshold and limits for dynamic adjustment
@@ -14,7 +13,7 @@ THRESHOLD_MIN = 40
 TH_ITERATIONS = 10
 
 # Desired “white” pixel percentage in the ROI (but this “white” is actually the black line in the inverted image)
-LINE_MIN = 3   # in percent
+LINE_MIN = 3  # in percent
 LINE_MAX = 12  # in percent
 
 # Region of interest parameters (process lower part of the image)
@@ -53,6 +52,7 @@ pwmB.start(100)
 
 # ---------- Helper Functions ----------
 
+
 def crop_roi(image):
     """
     Crop the region of interest (ROI) from the grayscale image.
@@ -64,6 +64,7 @@ def crop_roi(image):
     roi = image[y_start:height, :]
     return roi, y_start
 
+
 def compute_line_percentage(roi):
     """
     Computes the percentage of non-zero (white) pixels in the ROI.
@@ -73,6 +74,7 @@ def compute_line_percentage(roi):
     total_pixels = roi.shape[0] * roi.shape[1]
     perc = (line_pixels / total_pixels) * 100
     return perc
+
 
 def balance_threshold_for_black_line(gray_image, threshold_value):
     """
@@ -90,7 +92,9 @@ def balance_threshold_for_black_line(gray_image, threshold_value):
 
     for _ in range(TH_ITERATIONS):
         # Apply inverted threshold to detect black as white
-        _, binary_full = cv2.threshold(gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV)
+        _, binary_full = cv2.threshold(
+            gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV
+        )
         roi, _ = crop_roi(binary_full)
         perc = compute_line_percentage(roi)
 
@@ -117,9 +121,12 @@ def balance_threshold_for_black_line(gray_image, threshold_value):
             break
 
     # Apply the final adjusted threshold
-    _, final_binary_full = cv2.threshold(gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV)
+    _, final_binary_full = cv2.threshold(
+        gray_image, adjusted_threshold, 255, cv2.THRESH_BINARY_INV
+    )
     roi_final, y_start = crop_roi(final_binary_full)
     return roi_final, adjusted_threshold, y_start
+
 
 # ---------- Main Loop ----------
 current_threshold = THRESHOLD_INIT
@@ -138,7 +145,9 @@ try:
         )
 
         # Find contours in the inverted-threshold ROI
-        contours, _ = cv2.findContours(binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            binary_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         if contours:
             # Use the largest contour (assumed to be the black line)

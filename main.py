@@ -1,8 +1,7 @@
 import RPi.GPIO as GPIO
 import movement as motor
 import cv2 as cv
-import numpy as np
-from picamera2 import Picamera2
+from picamera2 import Picamera2  # type: ignore
 
 MARGIN = 100
 
