@@ -2,7 +2,6 @@ import RPi.GPIO as GPIO
 import movement as motor
 import cv2 as cv
 from picamera2 import Picamera2  # type: ignore
-import numpy as np
 
 MARGIN = 100
 
@@ -64,16 +63,15 @@ try:
                 cv.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # mark center
 
                 # finds the bounding box around the contour
-                rect = cv.minAreaRect(largest_contour)
-                box = cv.boxPoints(rect)
-                box = np.int0(box)
+                rect = cv.boundingRect(largest_contour)
+                x, y, w, h = rect
 
                 # center of bounding box
-                rcY = rect.y + rect.height / 2
-                rcX = rect.x + rect.width / 2
+                rcY = y + h / 2
+                rcX = x + w / 2
 
                 # draws bounding box
-                cv.drawContours(frame, [box], 0, (255, 0, 0), 2)
+                cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 cv.circle(frame, (rcX, rcY), 5, (0, 0, 255), -1)
 
                 # find center of region of interest (largest contour)
