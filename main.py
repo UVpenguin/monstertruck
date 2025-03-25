@@ -28,8 +28,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
 
-pwmA.start(20)
-pwmB.start(20)
+pwmA.start(70)
+pwmB.start(70)
 
 ## CAMERA SETUP
 picam2 = Picamera2()
