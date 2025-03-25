@@ -43,7 +43,7 @@ try:
         # captures frame data from camera
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        ret, thresh = cv.threshold(gray_frame, 127, 255, cv.THRESH_BINARY)
+        ret, thresh = cv.threshold(gray_frame, 150, 255, cv.THRESH_BINARY)
         invert_thresh = ~thresh
 
         contours, _ = cv.findContours(invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -61,7 +61,7 @@ try:
                 cv.drawContours(frame, [largest_contour], -1, (0, 255, 0), 3)
                 cv.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # mark center
 
-                # find center of region of interest (contour)
+                # find center of region of interest (largest contour)
                 roi_width = gray_frame.shape[1]
                 roi_center = roi_width // 2
 
