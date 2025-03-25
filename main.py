@@ -62,18 +62,6 @@ try:
                 cv.drawContours(frame, [largest_contour], -1, (0, 255, 0), 3)
                 cv.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # mark center
 
-                # finds the bounding box around the contour
-                rect = cv.boundingRect(largest_contour)
-                x, y, w, h = rect
-
-                # center of bounding box
-                rcY = y + h / 2
-                rcX = x + w / 2
-
-                # draws bounding box
-                cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                # cv.circle(frame, (rcX, rcY), 5, (0, 0, 255), -1)
-
                 # find center of region of interest (largest contour)
                 roi_width = gray_frame.shape[1]
                 roi_center = roi_width // 2
