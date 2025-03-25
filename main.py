@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import movement as motor
 import cv2 as cv
 from picamera2 import Picamera2  # type: ignore
+import numpy as np
 
 MARGIN = 100
 
@@ -42,7 +43,7 @@ try:
         # captures frame data from camera
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        ret, thresh = cv.threshold(gray_frame, 150, 255, cv.THRESH_BINARY)
+        ret, thresh = cv.threshold(gray_frame, 180, 255, cv.THRESH_BINARY)
         invert_thresh = ~thresh  # inverts threshold
 
         contours, _ = cv.findContours(
@@ -61,6 +62,19 @@ try:
                 # draw largest contour
                 cv.drawContours(frame, [largest_contour], -1, (0, 255, 0), 3)
                 cv.circle(frame, (cX, cY), 5, (0, 0, 255), -1)  # mark center
+
+                # finds the bounding box around the contour
+                rect = cv.minAreaRect(largest_contour)
+                box = cv.boxPoints(rect)
+                box = np.int0(box)
+
+                # center of bounding box
+                rcY = rect.y + rect.height / 2
+                rcX = rect.x + rect.width / 2
+
+                # draws bounding box
+                cv.drawContours(frame, [box], 0, (255, 0, 0), 2)
+                cv.circle(frame, (rcX, rcY), 5, (0, 0, 255), -1)
 
                 # find center of region of interest (largest contour)
                 roi_width = gray_frame.shape[1]
