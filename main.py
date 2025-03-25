@@ -46,7 +46,7 @@ try:
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         # ret, thresh = cv.threshold(gray_frame, 180, 255, cv.THRESH_BINARY)
         thresh2 = cv.adaptiveThreshold(
-            gray_frame, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2
+            gray_frame, 255, cv.ADAPTIVE_THRESH_C, cv.THRESH_BINARY, 11, 2
         )
         invert_thresh = ~thresh2  # inverts threshold
 
