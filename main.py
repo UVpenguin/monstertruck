@@ -81,7 +81,7 @@ try:
         # Allow a small delay and exit on pressing 'q'
         if cv.waitKey(1) & 0xFF == ord("q"):
             break
-        
+
         cv.waitKey(10)
 
 except KeyboardInterrupt:  # Cleanup
