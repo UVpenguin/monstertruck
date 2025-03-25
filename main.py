@@ -43,10 +43,9 @@ try:
         # captures frame data from camera
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        ret, thresh = cv.threshold(gray_frame, 127, 255, cv.THRESH_BINARY)
 
-        contours, _ = cv.findContours(
-            gray_frame, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         if contours:
             largest_contour = max(contours, key=cv.contourArea)
@@ -75,7 +74,7 @@ try:
         else:
             motor.stop()
 
-        cv.imshow("Gray Frame", gray_frame)
+        cv.imshow("Gray Frame", thresh)
         cv.imshow("Line Detection (Original Frame)", frame)
 
         # Allow a small delay and exit on pressing 'q'
