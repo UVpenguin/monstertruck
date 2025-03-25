@@ -33,10 +33,9 @@ pwmB.start(70)
 
 ## CAMERA SETUP
 picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration()
-preview_config["size"] = (250, 250)
-preview_config["framerate"] = 60
-picam2.configure(preview_config)
+config = picam2.create_video_configuration(main={"size": (150, 150)})
+config["main"]["framerate"] = 60
+picam2.configure(config)
 picam2.start()
 
 
