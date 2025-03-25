@@ -72,7 +72,7 @@ try:
 
                 # draws bounding box
                 cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                cv.circle(frame, (rcX, rcY), 5, (0, 0, 255), -1)
+                # cv.circle(frame, (rcX, rcY), 5, (0, 0, 255), -1)
 
                 # find center of region of interest (largest contour)
                 roi_width = gray_frame.shape[1]
