@@ -3,7 +3,7 @@ import movement as motor
 import cv2 as cv
 from picamera2 import Picamera2  # type: ignore
 
-MARGIN = 100
+MARGIN = 50
 
 ## GPIO CLEANUP
 GPIO.cleanup()
@@ -42,7 +42,7 @@ try:
         # captures frame data from camera
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        ret, thresh = cv.threshold(gray_frame, 180, 255, cv.THRESH_BINARY)
+        ret, thresh = cv.threshold(gray_frame, 200, 255, cv.THRESH_BINARY)
         invert_thresh = ~thresh  # inverts threshold
 
         contours, _ = cv.findContours(
