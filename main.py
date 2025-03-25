@@ -44,11 +44,9 @@ try:
         # captures frame data from camera
         frame = picam2.capture_array()
         gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-        # ret, thresh = cv.threshold(gray_frame, 180, 255, cv.THRESH_BINARY)
-        thresh2 = cv.adaptiveThreshold(
-            gray_frame, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2
-        )
-        invert_thresh = ~thresh2  # inverts threshold
+        ret, thresh = cv.threshold(gray_frame, 180, 255, cv.THRESH_BINARY)
+
+        invert_thresh = ~thresh  # inverts threshold
 
         contours, _ = cv.findContours(
             invert_thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
@@ -57,6 +55,11 @@ try:
         if contours:
             largest_contour = max(contours, key=cv.contourArea)
             M = cv.moments(largest_contour)
+
+            leftmost = tuple(largest_contour[largest_contour[:, :, 0].argmin()][0])
+            rightmost = tuple(largest_contour[largest_contour[:, :, 0].argmax()][0])
+            topmost = tuple(largest_contour[largest_contour[:, :, 1].argmin()][0])
+            bottommost = tuple(largest_contour[largest_contour[:, :, 1].argmax()][0])
 
             if M["m00"] > 0:
                 # Find centroid of contour
