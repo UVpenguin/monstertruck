@@ -2,7 +2,6 @@ import RPi.GPIO as GPIO
 import time
 
 # GPIO SETUP
-GPIO.cleanup()
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
@@ -30,6 +29,6 @@ try:
         set_angle(30)
         time.sleep(2)
 
-except KeyboardInterrupt:
+finally:
     pwm.stop()
     GPIO.cleanup()
