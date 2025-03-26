@@ -1,10 +1,13 @@
 import RPi.GPIO as GPIO
-from movement import forward, left, right, stop
 import movement as motor
 import cv2 as cv
-from picamera2 import Picamera2  # type: ignore
 import numpy as np
 from time import sleep
+from movement import forward, left, right, stop
+from picamera2 import Picamera2  # type: ignore
+from gpiozero.pins.pigpio import PiGPIOFactory
+from gpiozero import AngularServo
+import threading
 
 
 # GPIO CLEANUP
@@ -19,7 +22,6 @@ in1 = motor.in1
 in2 = motor.in2
 in3 = motor.in3
 in4 = motor.in4
-servo = 33
 
 GPIO.setup(enA, GPIO.OUT)
 GPIO.setup(enB, GPIO.OUT)
@@ -27,14 +29,21 @@ GPIO.setup(in1, GPIO.OUT)
 GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT)
 GPIO.setup(in4, GPIO.OUT)
-GPIO.setup(servo, GPIO.OUT)
 
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
-pwmServo = GPIO.PWM(servo, 50)
+
 
 pwmA.start(60)
 pwmB.start(60)
+
+# Servo Setup
+factory = PiGPIOFactory()
+servo = AngularServo(
+    "BOARD35", pin_factory=factory, min_pulse_width=0.0006, max_pulse_width=0.0023
+)
+
+line_detected_event = threading.Event()
 
 
 def preprocess(frame):
@@ -99,15 +108,23 @@ def adjust_motors(avg_angle, tolerance=30):
         right()
 
 
-def move_servo():
-    pwmServo.start(0)
-    pwmServo.ChangeDutyCycle(5)
-    sleep(1)
-    pwmServo.ChangeDutyCycle(2.5)
-    sleep(1)
+def servo_sweep(angle_range=(-45, 45), step=5, delay=0.2):
+    angle = angle_range[0]
+    direction = step
+    while not line_detected_event.is_set():
+        servo.angle = angle
+        sleep(delay)
+        angle += direction
+        if angle >= angle_range[1] or angle <= angle_range[0]:
+            direction *= -1  # Reverse direction when reaching bounds
+    # When the line is detected, reset servo to center (0 degrees)
+    sleep(2)
+    servo.angle = 0
 
 
 def main():
+    sweep_thread = threading.Thread(target=servo_sweep, args=(servo,), daemon=True)
+    sweep_thread.start()
     # Initialize the Picamera2 instance
     picam2 = Picamera2()
     picam2.configure(picam2.create_preview_configuration())
@@ -122,15 +139,22 @@ def main():
             angle = detect_line_direction(binary_img, sample_offset=50)
 
             if angle is not None:
+                if (
+                    not line_detected_event.is_set()
+                ):  # once line is found servo sweep is switched off and reset
+                    print("Line detected, stopping servo sweep.")
+                    line_detected_event.set()
                 adjust_motors(angle)
             else:
                 stop()
                 print("No line detected, stopping.")
-                while (
-                    angle is None
-                ):  # while no angle is found, move servo and search for one
-                    move_servo()
-                pwmServo.stop()
+
+                if line_detected_event.is_set():  # sets the servo sweep function off
+                    line_detected_event.clear()
+                    sweep_thread = threading.Thread(
+                        target=servo_sweep, args=(servo,), daemon=True
+                    )
+                    sweep_thread.start()
 
             cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
@@ -140,7 +164,6 @@ def main():
         motor.stop()
         pwmA.stop()
         pwmB.stop()
-        pwmServo.stop()
         cv.destroyAllWindows()
         GPIO.cleanup()
 
