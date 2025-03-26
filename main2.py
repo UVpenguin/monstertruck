@@ -30,8 +30,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
 
-pwmA.start(70)
-pwmB.start(70)
+pwmA.start(50)
+pwmB.start(50)
 
 
 def crop_frame(frame, x_start=150, x_end=430, y_start=180, y_end=475):
