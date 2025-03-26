@@ -34,22 +34,12 @@ pwmA.start(60)
 pwmB.start(60)
 
 
-def crop_frame(frame, x_start=150, x_end=430, y_start=180, y_end=475):
-    """
-    Crop the frame to reduce noise from unwanted areas.
-    The region is defined by x coordinates from 150 to 430 and y from 180 to 475.
-    """
+def crop_frame(frame, x_start=150, x_end=430, y_start=80, y_end=475):
     return frame[y_start:y_end, x_start:x_end]
 
 
-def preprocess_frame(frame):
-    """
-    Convert to grayscale and apply a binary threshold.
-    Since the line is black on a white background, pixels darker than the threshold
-    are considered part of the line.
-    """
+def preprocess(frame):
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    # You can adjust the threshold value if needed.
     _, binary = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
     return binary
 
@@ -100,7 +90,7 @@ def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     angle_rad = np.arctan2(dx, dy)
     angle_deg = np.degrees(angle_rad)
 
-    # For debugging, draw a marker on the binary image.
+    # debugging
     cv.circle(binary_img, (line_mid_x, sample_row), 3, (127,), -1)
     cv.line(binary_img, (fixed_x, height), (line_mid_x, sample_row), (127,), 2)
 
@@ -109,10 +99,9 @@ def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
 
 def adjust_motors(avg_angle, tolerance=30):
     """
-    Based on the average angle of the detected line, steer the robot.
-      - If the angle is near 0 (within tolerance), drive forward.
-      - If the angle is negative, steer left.
-      - If the angle is positive, steer right.
+    - If the angle is near 0 (within tolerance), go forward.
+    - If the angle is negative, go left.
+    - If the angle is positive, go right.
     """
     print(f"Average angle: {avg_angle:.2f}")
     if abs(avg_angle) < tolerance:
@@ -132,26 +121,18 @@ def main():
 
     try:
         while True:
-            # Capture a frame as a numpy array
             frame = picam2.capture_array()
-
             cropped_frame = crop_frame(frame)
+            binary_img = preprocess(cropped_frame)
 
-            # Process frame for edge detection
-            binary_img = preprocess_frame(cropped_frame)
-
-            # Detect the line direction using the fixed bottom-center point and sample row.
             angle = detect_line_direction(binary_img, sample_offset=50)
 
-            # If a line is detected, adjust motors based on the average angle;
-            # otherwise, stop the robot.
             if angle is not None:
                 adjust_motors(angle)
             else:
                 stop()
                 print("No line detected, stopping.")
 
-            # For debugging: show the edge-detected image (optional)
             cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
