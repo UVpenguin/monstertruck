@@ -93,8 +93,8 @@ def adjust_motors(avg_angle, tolerance=45):
 
 
 def servo_control():
-    min_angle, max_angle = -55, 55
-    step = 5
+    min_angle, max_angle = -65, 65
+    step = 10
     delay = 0.2  # delay between steps while sweeping
     current_angle = min_angle
     direction = step
