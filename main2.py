@@ -6,7 +6,6 @@ from picamera2 import Picamera2  # type: ignore
 import numpy as np
 from time import sleep
 
-bool lineFound
 
 # GPIO CLEANUP
 GPIO.cleanup()
