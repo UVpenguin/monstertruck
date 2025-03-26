@@ -98,13 +98,14 @@ def adjust_motors(avg_angle, tolerance=30):
     else:
         right()
 
-def move_servo()
+
+def move_servo():
     pwmServo.start(0)
     pwmServo.ChangeDutyCycle(5)
     sleep(1)
     pwmServo.ChangeDutyCycle(2.5)
     sleep(1)
-    
+
 
 def main():
     # Initialize the Picamera2 instance
@@ -125,10 +126,11 @@ def main():
             else:
                 stop()
                 print("No line detected, stopping.")
-                while angle is None: # while no angle is found, move servo and search for one
+                while (
+                    angle is None
+                ):  # while no angle is found, move servo and search for one
                     move_servo()
-                pwmServo.stop() 
-                
+                pwmServo.stop()
 
             cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
