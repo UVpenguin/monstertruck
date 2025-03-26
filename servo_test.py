@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-servo_pin = 13
+servo_pin = 19
 
 # GPIO setup
 GPIO.cleanup()
