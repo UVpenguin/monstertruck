@@ -4,6 +4,7 @@ import time
 servo_pin = 33
 
 # GPIO setup
+GPIO.cleanup()
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(servo_pin, GPIO.OUT)
 
