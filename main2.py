@@ -82,7 +82,7 @@ def detect_line(edges):
     return None, lines
 
 
-def adjust_motors(avg_angle, tolerance=5):
+def adjust_motors(avg_angle, tolerance=25):
     """
     Based on the average angle of the detected line, steer the robot.
       - If the angle is near 0 (within tolerance), drive forward.
