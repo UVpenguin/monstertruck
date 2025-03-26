@@ -9,7 +9,7 @@ GPIO.setmode(GPIO.BCM)
 
 servo_pin = 19
 GPIO.setup(servo_pin, GPIO.OUT)
-pwm = GPIO.PWM(servo_pin, 25)
+pwm = GPIO.PWM(servo_pin, 2)
 pwm.start(0)
 
 
@@ -24,11 +24,11 @@ def set_angle(angle):
 
 try:
     while True:
-        set_angle(180)
-        time.sleep(2)
         set_angle(90)
         time.sleep(2)
-        set_angle(180)
+        set_angle(20)
+        time.sleep(2)
+        set_angle(30)
         time.sleep(2)
 
 except KeyboardInterrupt:
