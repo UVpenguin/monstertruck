@@ -33,7 +33,13 @@ pwmB = GPIO.PWM(enB, 1000)
 pwmA.start(70)
 pwmB.start(70)
 
-# CAMERA SETUP
+
+def crop_frame(frame, x_start=150, x_end=430, y_start=180, y_end=475):
+    """
+    Crop the frame to reduce noise from unwanted areas.
+    The region is defined by x coordinates from 150 to 430 and y from 180 to 475.
+    """
+    return frame[y_start:y_end, x_start:x_end]
 
 
 def process_frame(frame):
@@ -104,8 +110,10 @@ def main():
             # Capture a frame as a numpy array
             frame = picam2.capture_array()
 
+            cropped_frame = crop_frame(frame)
+
             # Process frame for edge detection
-            edges = process_frame(frame)
+            edges = process_frame(cropped_frame)
 
             # Detect the line using Hough transform
             avg_angle, lines = detect_line(edges)
@@ -119,6 +127,7 @@ def main():
                 print("No line detected, stopping.")
 
             # For debugging: show the edge-detected image (optional)
+            cv.imshow("Cropped Frame", cropped_frame)
             cv.imshow("Edges", edges)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
