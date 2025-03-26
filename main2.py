@@ -4,8 +4,9 @@ import movement as motor
 import cv2 as cv
 from picamera2 import Picamera2  # type: ignore
 import numpy as np
-import time
+from time import sleep
 
+bool lineFound
 
 # GPIO CLEANUP
 GPIO.cleanup()
@@ -19,6 +20,7 @@ in1 = motor.in1
 in2 = motor.in2
 in3 = motor.in3
 in4 = motor.in4
+servo = 33
 
 GPIO.setup(enA, GPIO.OUT)
 GPIO.setup(enB, GPIO.OUT)
@@ -26,16 +28,14 @@ GPIO.setup(in1, GPIO.OUT)
 GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(in3, GPIO.OUT)
 GPIO.setup(in4, GPIO.OUT)
+GPIO.setup(servo, GPIO.OUT)
 
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
+pwmServo = GPIO.PWM(servo, 50)
 
 pwmA.start(60)
 pwmB.start(60)
-
-
-def crop_frame(frame, x_start=150, x_end=430, y_start=80, y_end=475):
-    return frame[y_start:y_end, x_start:x_end]
 
 
 def preprocess(frame):
@@ -45,27 +45,15 @@ def preprocess(frame):
 
 
 def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
-    """
-    Detect the line direction by sampling a fixed row.
-    - binary_img: a binary (thresholded) image of the ROI.
-    - sample_offset: vertical offset (in pixels) from the bottom of the cropped image where we sample.
-    - pixel_threshold: threshold for deciding if a pixel is considered 'black' (part of the line).
 
-    Returns the angle (in degrees) between the vertical and the vector from the fixed bottom-center
-    to the midpoint of the line edges found at the sample row.
-    If no line is detected, returns None.
-    """
     height, width = binary_img.shape
-    # The sample row is some pixels above the bottom.
     sample_row = height - sample_offset
     if sample_row < 0:
         sample_row = height - 1
 
-    # Get the row of pixels.
     row_pixels = binary_img[sample_row, :]
 
-    # Find indices where pixel value is below the pixel_threshold (i.e. part of the black line).
-    # (Since thresholding set dark areas to 0.)
+    # Find indices where pixel value is below the pixel_threshold
     line_indices = np.where(row_pixels < pixel_threshold)[0]
 
     if line_indices.size == 0:
@@ -74,10 +62,10 @@ def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     # Assume the left and right edges of the line are the first and last detected indices.
     left_edge = line_indices[0]
     right_edge = line_indices[-1]
-    # Calculate the midpoint of the line at the sample row.
+    # Calculate the midpoint
     line_mid_x = (left_edge + right_edge) // 2
 
-    # Define a fixed bottom-center point of the cropped image.
+    # Define a fixed bottom-center point
     fixed_x = width // 2
     fixed_y = height  # bottom of the image
 
@@ -111,6 +99,13 @@ def adjust_motors(avg_angle, tolerance=30):
     else:
         right()
 
+def move_servo()
+    pwmServo.start(0)
+    pwmServo.ChangeDutyCycle(5)
+    sleep(1)
+    pwmServo.ChangeDutyCycle(2.5)
+    sleep(1)
+    
 
 def main():
     # Initialize the Picamera2 instance
@@ -131,6 +126,10 @@ def main():
             else:
                 stop()
                 print("No line detected, stopping.")
+                while angle is None: # while no angle is found, move servo and search for one
+                    move_servo()
+                pwmServo.stop() 
+                
 
             cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
@@ -140,12 +139,9 @@ def main():
         motor.stop()
         pwmA.stop()
         pwmB.stop()
+        pwmServo.stop()
         cv.destroyAllWindows()
         GPIO.cleanup()
-
-    finally:
-        cv.destroyAllWindows()
-        stop()
 
 
 if __name__ == "__main__":
