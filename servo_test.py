@@ -1,12 +1,18 @@
 from gpiozero.pins.pigpio import PiGPIOFactory
-from gpiozero import Servo
-from gpiozero.tools import sin_values
-from signal import pause
+from gpiozero import AngularServo
+from time import sleep
 
 factory = PiGPIOFactory()
-s = Servo("BOARD35", pin_factory=factory)
+s = AngularServo("BOARD35", pin_factory=factory, min_angle=-90, max_angle=90)
 
-s.source = sin_values()
-s.source_delay = 0.1
-
-pause()
+while True:
+    s.angle = -90
+    sleep(2)
+    s.angle = -45
+    sleep(2)
+    s.angle = 0
+    sleep(2)
+    s.angle = 45
+    sleep(2)
+    s.angle = 90
+    sleep(2)
