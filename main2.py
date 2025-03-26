@@ -112,7 +112,7 @@ def main():
     picam2 = Picamera2()
     picam2.configure(picam2.create_preview_configuration())
     picam2.start()
-    time.sleep(2)
+    sleep(2)
 
     try:
         while True:
