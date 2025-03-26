@@ -1,15 +1,15 @@
 import RPi.GPIO as GPIO
 import time
 
-servo_pin = 19
-
-# GPIO setup
+# GPIO SETUP
 GPIO.cleanup()
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
+
+
+servo_pin = 19
 GPIO.setup(servo_pin, GPIO.OUT)
-
-
-pwm = GPIO.PWM(servo_pin, 50)
+pwm = GPIO.PWM(servo_pin, 25)
 pwm.start(0)
 
 
