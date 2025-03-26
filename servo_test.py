@@ -24,10 +24,6 @@ def set_angle(angle):
 try:
     set_angle(10)
     time.sleep(2)
-    set_angle(20)
-    time.sleep(2)
-    set_angle(30)
-    time.sleep(2)
 
 finally:
     pwm.stop()
