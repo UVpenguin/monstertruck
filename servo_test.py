@@ -13,4 +13,4 @@ while True:
     s.max()
     sleep(2)
     s.min()
-    sleep()
+    sleep(2)
