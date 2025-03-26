@@ -35,15 +35,13 @@ def set_servo_angle(angle):
 try:
     while True:
         # Sweep from -90 to 90 degrees
-        for angle in range(-90, 91, 1):  # increment by 1 degree
+        for angle in range(-45, 135, 5):  # increment by 1 degree
             set_servo_angle(angle)
-            time.sleep(0.01)
         time.sleep(0.5)  # pause at the end of the sweep
 
         # Sweep back from 90 to -90 degrees
-        for angle in range(90, -91, -1):  # decrement by 1 degree
+        for angle in range(135, -45, -5):  # decrement by 1 degree
             set_servo_angle(angle)
-            time.sleep(0.01)
         time.sleep(0.5)
 except KeyboardInterrupt:
     # Exit the loop when Ctrl+C is pressed
