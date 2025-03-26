@@ -1,30 +1,12 @@
-import RPi.GPIO as GPIO
-import time
+from gpiozero import Servo
+
 
 # GPIO SETUP
-GPIO.cleanup()
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-
-servo_pin = 19
-GPIO.setup(servo_pin, GPIO.OUT)
-pwm = GPIO.PWM(servo_pin, 2)
-pwm.start(0)
-
-
-def set_angle(angle):
-    duty_cycle = (angle / 18) + 2
-    GPIO.output(servo_pin, True)
-    pwm.ChangeDutyCycle(duty_cycle)
-    time.sleep(1)
-    GPIO.output(servo_pin, False)
-    pwm.ChangeDutyCycle(0)
+s = Servo("BOARD35")
 
 
 try:
-    set_angle(10)
-    time.sleep(2)
+    s.mid()
 
 finally:
-    pwm.stop()
-    GPIO.cleanup()
+    pass
