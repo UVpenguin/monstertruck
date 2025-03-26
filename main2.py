@@ -30,8 +30,8 @@ GPIO.setup(in4, GPIO.OUT)
 pwmA = GPIO.PWM(enA, 1000)
 pwmB = GPIO.PWM(enB, 1000)
 
-pwmA.start(50)
-pwmB.start(50)
+pwmA.start(60)
+pwmB.start(60)
 
 
 def crop_frame(frame, x_start=150, x_end=430, y_start=180, y_end=475):
@@ -107,7 +107,7 @@ def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     return angle_deg
 
 
-def adjust_motors(avg_angle, tolerance=25):
+def adjust_motors(avg_angle, tolerance=30):
     """
     Based on the average angle of the detected line, steer the robot.
       - If the angle is near 0 (within tolerance), drive forward.
