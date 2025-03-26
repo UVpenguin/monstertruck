@@ -1,9 +1,6 @@
 from gpiozero import Servo
-import RPi.GPIO as GPIO
 
-GPIO.cleanup()
-GPIO.setmode(GPIO.BOARD)
 
-s = Servo(33)
+s = Servo(13)
 print(s.min())
 print(s.max())
