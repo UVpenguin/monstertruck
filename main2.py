@@ -81,7 +81,7 @@ def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     return angle_deg
 
 
-def adjust_motors(avg_angle, tolerance=30):
+def adjust_motors(avg_angle, tolerance=45):
 
     print(f"Average angle: {avg_angle:.2f}")
     if abs(avg_angle) < tolerance:
@@ -93,7 +93,7 @@ def adjust_motors(avg_angle, tolerance=30):
 
 
 def servo_control():
-    min_angle, max_angle = -45, 45
+    min_angle, max_angle = -55, 55
     step = 5
     delay = 0.2  # delay between steps while sweeping
     current_angle = min_angle
