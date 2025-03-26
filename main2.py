@@ -42,44 +42,69 @@ def crop_frame(frame, x_start=150, x_end=430, y_start=180, y_end=475):
     return frame[y_start:y_end, x_start:x_end]
 
 
-def process_frame(frame):
+def preprocess_frame(frame):
     """
-    Convert the captured frame to grayscale, blur it to reduce noise,
-    and run Canny edge detection.
+    Convert to grayscale and apply a binary threshold.
+    Since the line is black on a white background, pixels darker than the threshold
+    are considered part of the line.
     """
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    # Apply Gaussian blur to smooth the image
-    blur = cv.GaussianBlur(gray, (5, 5), 0)
-    # Use Canny to detect edges; adjust thresholds as needed.
-    edges = cv.Canny(blur, 50, 150)
-    return edges
+    # You can adjust the threshold value if needed.
+    _, binary = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
+    return binary
 
 
-def detect_line(edges):
+def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     """
-    Use the probabilistic Hough transform to detect line segments.
-    Returns the average angle of detected lines and the lines array.
+    Detect the line direction by sampling a fixed row.
+    - binary_img: a binary (thresholded) image of the ROI.
+    - sample_offset: vertical offset (in pixels) from the bottom of the cropped image where we sample.
+    - pixel_threshold: threshold for deciding if a pixel is considered 'black' (part of the line).
+
+    Returns the angle (in degrees) between the vertical and the vector from the fixed bottom-center
+    to the midpoint of the line edges found at the sample row.
+    If no line is detected, returns None.
     """
-    # Parameters for HoughLinesP: distance resolution = 1 pixel, angle resolution = 1 degree (in radians),
-    # threshold for minimum intersections, minLineLength, and maxLineGap.
-    lines = cv.HoughLinesP(
-        edges, 1, np.pi / 180, threshold=50, minLineLength=50, maxLineGap=10
-    )
+    height, width = binary_img.shape
+    # The sample row is some pixels above the bottom.
+    sample_row = height - sample_offset
+    if sample_row < 0:
+        sample_row = height - 1
 
-    if lines is None:
-        return None, None
+    # Get the row of pixels.
+    row_pixels = binary_img[sample_row, :]
 
-    angles = []
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        # Calculate the angle (in degrees) of the line segment relative to the horizontal
-        angle = np.degrees(np.arctan2((y2 - y1), (x2 - x1)))
-        angles.append(angle)
+    # Find indices where pixel value is below the pixel_threshold (i.e. part of the black line).
+    # (Since thresholding set dark areas to 0.)
+    line_indices = np.where(row_pixels < pixel_threshold)[0]
 
-    if angles:
-        avg_angle = np.mean(angles)
-        return avg_angle, lines
-    return None, lines
+    if line_indices.size == 0:
+        return None
+
+    # Assume the left and right edges of the line are the first and last detected indices.
+    left_edge = line_indices[0]
+    right_edge = line_indices[-1]
+    # Calculate the midpoint of the line at the sample row.
+    line_mid_x = (left_edge + right_edge) // 2
+
+    # Define a fixed bottom-center point of the cropped image.
+    fixed_x = width // 2
+    fixed_y = height  # bottom of the image
+
+    # The vector from the fixed point to the detected line midpoint.
+    dx = line_mid_x - fixed_x
+    dy = sample_offset  # vertical difference (from fixed_y to sample_row)
+
+    # Calculate the angle in radians relative to vertical.
+    # Since dy is the known vertical distance, we use arctan2(dx, dy).
+    angle_rad = np.arctan2(dx, dy)
+    angle_deg = np.degrees(angle_rad)
+
+    # For debugging, draw a marker on the binary image.
+    cv.circle(binary_img, (line_mid_x, sample_row), 3, (127,), -1)
+    cv.line(binary_img, (fixed_x, height), (line_mid_x, sample_row), (127,), 2)
+
+    return angle_deg
 
 
 def adjust_motors(avg_angle, tolerance=25):
@@ -99,11 +124,11 @@ def adjust_motors(avg_angle, tolerance=25):
 
 
 def main():
-    # Initialize the Picamera2 instance and start the camera
+    # Initialize the Picamera2 instance
     picam2 = Picamera2()
     picam2.configure(picam2.create_preview_configuration())
     picam2.start()
-    time.sleep(2)  # allow the camera to warm up
+    time.sleep(2)
 
     try:
         while True:
@@ -113,22 +138,21 @@ def main():
             cropped_frame = crop_frame(frame)
 
             # Process frame for edge detection
-            edges = process_frame(cropped_frame)
+            binary_img = preprocess_frame(cropped_frame)
 
-            # Detect the line using Hough transform
-            avg_angle, lines = detect_line(edges)
+            # Detect the line direction using the fixed bottom-center point and sample row.
+            angle = detect_line_direction(binary_img, sample_offset=50)
 
             # If a line is detected, adjust motors based on the average angle;
             # otherwise, stop the robot.
-            if avg_angle is not None:
-                adjust_motors(avg_angle)
+            if angle is not None:
+                adjust_motors(angle)
             else:
                 stop()
                 print("No line detected, stopping.")
 
             # For debugging: show the edge-detected image (optional)
-            cv.imshow("Cropped Frame", cropped_frame)
-            cv.imshow("Edges", edges)
+            cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
 
