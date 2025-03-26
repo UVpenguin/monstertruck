@@ -122,8 +122,7 @@ def main():
     try:
         while True:
             frame = picam2.capture_array()
-            cropped_frame = crop_frame(frame)
-            binary_img = preprocess(cropped_frame)
+            binary_img = preprocess(frame)
 
             angle = detect_line_direction(binary_img, sample_offset=50)
 
