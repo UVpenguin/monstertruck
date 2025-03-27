@@ -36,7 +36,7 @@ picam2.configure(preview_config)
 picam2.start()
 
 time.sleep(2)
-threshold = 0.5
+threshold = 0.6
 frame_count = 0
 
 while True:
@@ -71,7 +71,7 @@ while True:
             best_loc = None
             best_scale = 1.0
 
-            for scale in np.linspace(0.5, 1.2, 10):
+            for scale in np.linspace(0.5, 1.2, 20):
                 try:
                     resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
                 except cv2.error as e:
