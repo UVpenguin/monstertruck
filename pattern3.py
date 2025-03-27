@@ -59,24 +59,55 @@ def detect_shapes(image):
 
 
 def detect_arrow(image):
-    """Improved arrow detection with angle verification"""
+    """Improved arrow detection with direction estimation"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
 
     if lines is None or len(lines) < 2:
-        return False
+        return False, None  # No arrow detected
 
-    # Check for converging lines (arrowhead pattern)
-    angles = []
-    for line in lines[:2]:
+    # Store endpoints of detected lines
+    points = []
+    for line in lines[:4]:  # Consider first few detected lines
         x1, y1, x2, y2 = line[0]
-        angle = np.arctan2(y2 - y1, x2 - x1)
-        angles.append(angle)
+        points.append(((x1, y1), (x2, y2)))
 
-    # Check if lines form a V-shape (typical arrowhead)
-    angle_diff = np.abs(angles[0] - angles[1])
-    return np.degrees(angle_diff) < 90  # Adjust threshold as needed
+    # Find the two most distant points (potential arrowhead)
+    max_dist = 0
+    arrow_head = None
+    for p1, p2 in points:
+        for q1, q2 in points:
+            dist = np.linalg.norm(np.array(p1) - np.array(q1))
+            if dist > max_dist:
+                max_dist = dist
+                arrow_head, arrow_base = p1, q1  # Arrowhead is the farther point
+
+    if not arrow_head or not arrow_base:
+        return False, None
+
+    # Determine direction based on relative position
+    dx = arrow_head[0] - arrow_base[0]
+    dy = arrow_head[1] - arrow_base[1]
+
+    if abs(dx) > abs(dy):  # Horizontal movement
+        direction = "right" if dx > 0 else "left"
+    else:  # Vertical movement
+        direction = "down" if dy > 0 else "up"
+
+    # Draw the detected arrow
+    cv2.arrowedLine(image, arrow_base, arrow_head, (0, 255, 0), 3, tipLength=0.3)
+    cv2.putText(
+        image,
+        f"Arrow: {direction}",
+        (10, 60),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 0, 255),
+        2,
+    )
+
+    return True, direction
 
 
 def detect_color(image):
@@ -186,7 +217,7 @@ while True:
     # Run shape/color/arrow detection on display frame
     color_info = detect_color(display_frame)
     display_frame = detect_shapes(display_frame)
-    arrow_detected = detect_arrow(display_frame)
+    arrow_detected, arrow_direction = detect_arrow(display_frame)
 
     # Add informational overlay
     cv2.putText(
@@ -200,7 +231,7 @@ while True:
     )
     cv2.putText(
         display_frame,
-        f"Arrow: {arrow_detected}",
+        f"Arrow: {arrow_direction if arrow_detected else 'None'}",
         (10, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
