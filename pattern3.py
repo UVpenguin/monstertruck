@@ -251,7 +251,7 @@ while True:
     cv2.putText(
         display_frame,
         f"Arrow Direction: {direction}",
-        (10, 40),
+        (10, 60),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
         (0, 0, 255),
