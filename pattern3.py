@@ -80,6 +80,9 @@ def detect_arrow(image):
         x1, y1, x2, y2 = line[0]
         # Calculate angle in degrees
         angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
+        # Store line with leftmost point first to normalize direction
+        if x1 > x2:
+            x1, y1, x2, y2 = x2, y2, x1, y1
         line_info.append((angle_deg, x1, y1, x2, y2))
 
     # Look for converging lines (arrowhead pattern)
@@ -107,7 +110,7 @@ def detect_arrow(image):
                         direction = "DOWN"
                 # Horizontal detection (Left/Right)
                 else:
-                    # Check if points are moving horizontally
+                    # Check horizontal movement
                     if x2_1 > x1_1 and x2_2 > x1_2:
                         direction = "RIGHT"
                     elif x2_1 < x1_1 and x2_2 < x1_2:
