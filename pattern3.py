@@ -58,51 +58,83 @@ def detect_shapes(image):
     return image
 
 
-def detect_arrow(image):
-    """Improved arrow detection with direction estimation"""
+# Global variable to smooth the angle over frames
+prev_angle = None
+
+
+def detect_arrow(image, area_threshold=1000, smooth_factor=0.8):
+    """
+    Detects an arrow in the image using contour detection and line fitting.
+    Returns a tuple (detected: bool, direction: str or None).
+    The direction is one of: "left", "right", "up", "down".
+
+    Parameters:
+      area_threshold: Minimum contour area to be considered an arrow.
+      smooth_factor: Smoothing coefficient (between 0 and 1). Higher values mean more smoothing.
+    """
+    global prev_angle
+
+    # Preprocess image: convert to gray and apply blur and thresholding
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    ret, thresh = cv2.threshold(
+        blurred, 50, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    )
 
-    if lines is None or len(lines) < 2:
-        return False, None  # No arrow detected
+    # Find contours and select the largest one (assuming it's the arrow)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    arrow_contour = None
+    max_area = 0
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > max_area and area > area_threshold:
+            max_area = area
+            arrow_contour = cnt
 
-    # Store endpoints of detected lines
-    points = []
-    for line in lines[:4]:  # Consider first few detected lines
-        x1, y1, x2, y2 = line[0]
-        points.append(((x1, y1), (x2, y2)))
-
-    # Find the two most distant points (potential arrowhead)
-    max_dist = 0
-    arrow_head = None
-    for p1, p2 in points:
-        for q1, q2 in points:
-            dist = np.linalg.norm(np.array(p1) - np.array(q1))
-            if dist > max_dist:
-                max_dist = dist
-                arrow_head, arrow_base = p1, q1  # Arrowhead is the farther point
-
-    if not arrow_head or not arrow_base:
+    if arrow_contour is None:
         return False, None
 
-    # Determine direction based on relative position
-    dx = arrow_head[0] - arrow_base[0]
-    dy = arrow_head[1] - arrow_base[1]
+    # Fit a line to the arrow contour (using all its points)
+    # cv2.fitLine returns (vx, vy, x0, y0)
+    vx, vy, x0, y0 = cv2.fitLine(arrow_contour, cv2.DIST_L2, 0, 0.01, 0.01)
+    angle = np.arctan2(vy, vx) * 180.0 / np.pi  # angle in degrees
+    angle = float(angle)  # convert to standard float
 
-    if abs(dx) > abs(dy):  # Horizontal movement
-        direction = "right" if dx > 0 else "left"
-    else:  # Vertical movement
-        direction = "down" if dy > 0 else "up"
+    # Apply exponential smoothing to reduce jitter
+    if prev_angle is None:
+        smoothed_angle = angle
+    else:
+        smoothed_angle = smooth_factor * prev_angle + (1 - smooth_factor) * angle
+    prev_angle = smoothed_angle
 
-    # Draw the detected arrow
-    cv2.arrowedLine(image, arrow_base, arrow_head, (0, 255, 0), 3, tipLength=0.3)
+    # Map the smoothed angle to a cardinal direction.
+    # In image coordinates, x increases to the right and y increases downward.
+    # Right: angle around 0°, Down: angle around 90°, Left: around 180° (or -180°), Up: around -90°.
+    if -45 <= smoothed_angle < 45:
+        direction = "right"
+    elif 45 <= smoothed_angle < 135:
+        direction = "down"
+    elif smoothed_angle >= 135 or smoothed_angle < -135:
+        direction = "left"
+    else:
+        direction = "up"
+
+    # Optionally, draw a bounding box and a line indicating the detected arrow orientation.
+    rect = cv2.minAreaRect(arrow_contour)
+    box = cv2.boxPoints(rect)
+    box = np.intp(box)
+    cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
+    # Draw a line representing the direction; use the line fit center (x0, y0) and a scaled vector.
+    line_length = 50
+    pt1 = (int(x0), int(y0))
+    pt2 = (int(x0 + vx * line_length), int(y0 + vy * line_length))
+    cv2.arrowedLine(image, pt1, pt2, (255, 0, 0), 2, tipLength=0.3)
     cv2.putText(
         image,
         f"Arrow: {direction}",
         (10, 60),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.5,
+        0.6,
         (0, 0, 255),
         2,
     )
