@@ -19,7 +19,7 @@ template_files = get_template_images(templates_folder)
 if not template_files:
     print("No template images found in folder:", templates_folder)
 
-# Load templates in grayscale for faster processing
+# Load templates in grayscale for faster processing (they will be 8-bit)
 templates = []
 for file in template_files:
     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
@@ -28,6 +28,7 @@ for file in template_files:
     else:
         print(f"Warning: Could not load {file}")
 
+# Initialize Picamera2 and start the camera
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration())
 picam2.start()
@@ -39,16 +40,20 @@ threshold = 0.7
 frame_count = 0
 
 while True:
+    # Capture frame from Picamera2
     frame = picam2.capture_array()
 
     # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
 
-    # Check if the frame is already grayscale (2D) or in color (3D)
+    # If frame has three channels, convert to grayscale
     if len(frame.shape) == 3 and frame.shape[2] == 3:
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     else:
-        gray_frame = frame  # Frame is already grayscale
+        gray_frame = frame
+
+    # Convert captured frame to 8-bit if it isn't already
+    gray_frame = cv2.convertScaleAbs(gray_frame)
 
     frame_count += 1
     if frame_count % 3 == 0:  # Process every third frame to reduce load
@@ -125,5 +130,5 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
-camera.release()
+picam2.stop()
 cv2.destroyAllWindows()
