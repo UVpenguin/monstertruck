@@ -67,7 +67,7 @@ time.sleep(2)
 
 # Configuration
 FRAME_SIZE = (320, 240)
-SCALE_RANGE = np.linspace(0.3, 1.5, 15)  # Optimized scale range
+SCALE_RANGE = np.linspace(0.1, 1.5, 15)  # Optimized scale range
 THRESHOLD = 0.65  # Increased threshold for better precision
 IOU_THRESHOLD = 0.4  # NMS overlap threshold
 
@@ -80,7 +80,7 @@ if not templates:
 while True:
     # Capture and preprocess frame
     frame = picam2.capture_array()
-    frame = cv2.resize(frame, FRAME_SIZE)
+    # frame = cv2.resize(frame, FRAME_SIZE)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     processed_frame = cv2.Canny(gray, 50, 150)  # Edge detection
 
