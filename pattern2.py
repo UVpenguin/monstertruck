@@ -19,16 +19,17 @@ template_files = get_template_images(templates_folder)
 if not template_files:
     print("No template images found in folder:", templates_folder)
 
-# Load templates in grayscale for faster processing (they will be 8-bit)
+# Load templates in grayscale (should be np.uint8 by default)
 templates = []
 for file in template_files:
     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
     if img is not None:
+        # Ensure the template is 8-bit
+        img = img.astype(np.uint8)
         templates.append((file, img))
     else:
         print(f"Warning: Could not load {file}")
 
-# Initialize Picamera2 and start the camera
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration())
 picam2.start()
@@ -46,14 +47,19 @@ while True:
     # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
 
-    # If frame has three channels, convert to grayscale
+    # If frame has three channels, convert to grayscale.
     if len(frame.shape) == 3 and frame.shape[2] == 3:
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     else:
-        gray_frame = frame
+        gray_frame = frame  # Frame is already grayscale
 
-    # Convert captured frame to 8-bit if it isn't already
+    # Ensure the captured frame is 8-bit.
     gray_frame = cv2.convertScaleAbs(gray_frame)
+    gray_frame = gray_frame.astype(np.uint8)
+
+    # Debug: print the type and shape of the frame (once every few frames)
+    if frame_count % 30 == 0:
+        print("gray_frame type:", gray_frame.dtype, "shape:", gray_frame.shape)
 
     frame_count += 1
     if frame_count % 3 == 0:  # Process every third frame to reduce load
@@ -69,6 +75,9 @@ while True:
                 except cv2.error as e:
                     print("Resize error:", e)
                     continue
+
+                # Debug: check the resized template type and shape
+                # print("resized_template type:", resized_template.dtype, "shape:", resized_template.shape)
 
                 h, w = resized_template.shape
 
