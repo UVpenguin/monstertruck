@@ -12,10 +12,13 @@ def get_template_images(folder):
     return files
 
 
+# Get templates from folder
 templates_folder = "templates"
 template_files = get_template_images(templates_folder)
+if not template_files:
+    print("No template images found in folder:", templates_folder)
 
-# load the templates into a list as (filename, image) tuples
+# Load templates into a list of (filename, image)
 templates = []
 for file in template_files:
     img = cv2.imread(file)
@@ -24,43 +27,52 @@ for file in template_files:
     else:
         print(f"Warning: Could not load {file}")
 
-
+# Open the camera
 camera = cv2.VideoCapture(0)
+if not camera.isOpened():
+    print("Error: Could not open camera.")
+    exit()
 
 threshold = 0.7
 
 while True:
     ret, frame = camera.read()
     if not ret:
+        print("Error: Frame capture failed.")
         break
 
+    # For each template, do multi-scale matching
     for file, template in templates:
         best_val = -1
         best_loc = None
         best_scale = 1.0
 
         for scale in np.linspace(0.1, 1.5, 20):
-            resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+            try:
+                resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+            except cv2.error as e:
+                print("Resize error:", e)
+                continue
+
             h, w, _ = resized_template.shape
 
-            # if the resized template is larger than the frame, skip it
+            # Skip if resized template is larger than the frame
             if frame.shape[0] < h or frame.shape[1] < w:
                 continue
 
-            # template matching on blue channel
+            # Template matching on the blue channel
             result = cv2.matchTemplate(
                 frame[:, :, 0], resized_template[:, :, 0], cv2.TM_CCOEFF_NORMED
             )
             _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
-            # recordsthe best match
             if max_val > best_val:
                 best_val = max_val
                 best_loc = max_loc
                 best_scale = scale
 
-        # if the best match for the current template exceeds the threshold, draw the rectangle and label it
-        if best_val >= threshold:
+        # Draw rectangle if match exceeds the threshold and best_loc is valid
+        if best_val >= threshold and best_loc is not None:
             resized_template = cv2.resize(
                 template, (0, 0), fx=best_scale, fy=best_scale
             )
@@ -81,6 +93,7 @@ while True:
 
     cv2.imshow("Live Feed", frame)
 
+    # Break loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
