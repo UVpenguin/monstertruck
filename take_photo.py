@@ -1,15 +1,13 @@
 import cv2 as cv
+from picamera2 import Picamera2  # type: ignore
 
-# Open the webcam (0 is the default camera)
-cap = cv.VideoCapture(0)
-
-if not cap.isOpened():
-    print("Error: Could not open camera.")
-    exit()
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration())
+picam2.start()
 
 
 while True:
-    ret, frame = cap.read()
+    frame = picam2.capture_array()
     cv.imshow("Live Feed", frame)
 
     if cv.waitKey(1) & 0xFF == ord('q'):
@@ -18,5 +16,4 @@ while True:
         print("Photo taken and saved as captured_image.jpg")
 
 # Release the camera
-cap.release()
 cv.destroyAllWindows()
