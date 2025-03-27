@@ -85,7 +85,7 @@ try:
             motor.stop()
 
         cv.imshow("Gray Frame", invert_thresh)
-        cv.imshow("Line Detection (Original Frame)", frame)
+        cv.imshow("Original Frame", frame)
 
         # Allow a small delay and exit on pressing 'q'
         if cv.waitKey(1) & 0xFF == ord("q"):
