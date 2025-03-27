@@ -60,7 +60,7 @@ def detect_shapes(image):
 
 def detect_arrow(image):
     """
-    Improved arrow detection with direction relative to image center
+    Improved arrow detection with precise direction identification
 
     Returns:
     - False if no arrow detected
@@ -74,15 +74,13 @@ def detect_arrow(image):
     if lines is None or len(lines) < 2:
         return (False, "")
 
-    # Image center
-    height, width = image.shape[:2]
-    center_x, center_y = width // 2, height // 2
-
     # Collect line information
     line_info = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        line_info.append((x1, y1, x2, y2))
+        # Calculate angle in degrees
+        angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
+        line_info.append((angle_deg, x1, y1, x2, y2))
 
     # Look for converging lines (arrowhead pattern)
     arrowhead_found = False
@@ -91,36 +89,29 @@ def detect_arrow(image):
     # Check for arrowhead formation
     for i in range(len(line_info)):
         for j in range(i + 1, len(line_info)):
-            x1_1, y1_1, x2_1, y2_1 = line_info[i]
-            x1_2, y1_2, x2_2, y2_2 = line_info[j]
+            angle1, x1_1, y1_1, x2_1, y2_1 = line_info[i]
+            angle2, x1_2, y1_2, x2_2, y2_2 = line_info[j]
 
-            # Find the point of the arrow (convergence point)
-            angle_diff = np.abs(
-                np.arctan2(y2_1 - y1_1, x2_1 - x1_1)
-                - np.arctan2(y2_2 - y1_2, x2_2 - x1_2)
-            )
-
-            if np.degrees(angle_diff) < 90:
+            # Check if lines converge
+            angle_diff = np.abs(angle1 - angle2)
+            if angle_diff < 90:
                 arrowhead_found = True
 
-                # Find the point closest to the arrowhead
-                points = [(x1_1, y1_1), (x2_1, y2_1), (x1_2, y1_2), (x2_2, y2_2)]
-                point = min(
-                    points,
-                    key=lambda p: (p[0] - center_x) ** 2 + (p[1] - center_y) ** 2,
-                )
-
-                # Determine direction based on point's relation to image center
-                if point[0] < center_x - width * 0.1:
-                    direction = "LEFT"
-                elif point[0] > center_x + width * 0.1:
-                    direction = "RIGHT"
-                elif point[1] < center_y - height * 0.1:
-                    direction = "UP"
-                elif point[1] > center_y + height * 0.1:
-                    direction = "DOWN"
+                # Determine arrow direction more precisely
+                # Vertical detection (Up/Down)
+                if abs(angle1) > 60 or abs(angle2) > 60:
+                    # Check if points are moving vertically
+                    if y2_1 < y1_1 and y2_2 < y1_2:
+                        direction = "UP"
+                    elif y2_1 > y1_1 and y2_2 > y1_2:
+                        direction = "DOWN"
+                # Horizontal detection (Left/Right)
                 else:
-                    direction = "CENTER"
+                    # Check if points are moving horizontally
+                    if x2_1 > x1_1 and x2_2 > x1_2:
+                        direction = "RIGHT"
+                    elif x2_1 < x1_1 and x2_2 < x1_2:
+                        direction = "LEFT"
 
                 break
 
