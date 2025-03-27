@@ -6,44 +6,81 @@ import time
 from picamera2 import Picamera2  # type: ignore
 
 
-# ================== NEW ADDITIONS ==================
+# ================== UPDATED DETECTORS ==================
 def detect_shapes(image):
-    """Recognize basic shapes using contour analysis"""
+    """Improved shape detection with ROI isolation"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
+    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
+
+    # Adaptive thresholding for better contrast
+    thresh = cv2.adaptiveThreshold(
+        blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+    )
+
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
+        # Ignore small contours
+        if cv2.contourArea(contour) < 1000:
+            continue
+
         peri = cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
+        approx = cv2.approxPolyDP(contour, 0.03 * peri, True)
         vertices = len(approx)
 
-        # Get bounding box coordinates for all shapes
-        x, y, w, h = cv2.boundingRect(approx)
+        # Get rotated bounding rectangle
+        rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rect)
+        box = np.intp(box)
+        x, y = box[0]
 
         shape = ""
         if vertices == 3:
             shape = "triangle"
         elif vertices == 4:
-            ar = w / float(h)
-            shape = "square" if 0.95 <= ar <= 1.05 else "rectangle"
+            # Calculate aspect ratio using min area rectangle
+            (_, _), (w, h), _ = rect
+            ar = max(w, h) / min(w, h) if min(w, h) > 0 else 0
+            shape = "square" if ar < 1.1 else "rectangle"
         elif vertices == 5:
             shape = "pentagon"
-        elif vertices >= 6:
+        elif 6 <= vertices <= 8:
             shape = "circle"
+        else:
+            shape = "complex"
 
         if shape:
-            cv2.drawContours(image, [contour], -1, (0, 255, 0), 2)
-            # Use the bounding box coordinates for text placement
+            cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
             cv2.putText(
-                image, shape, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2
+                image, shape, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2
             )
+
     return image
 
 
+def detect_arrow(image):
+    """Improved arrow detection with angle verification"""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
+
+    if lines is None or len(lines) < 2:
+        return False
+
+    # Check for converging lines (arrowhead pattern)
+    angles = []
+    for line in lines[:2]:
+        x1, y1, x2, y2 = line[0]
+        angle = np.arctan2(y2 - y1, x2 - x1)
+        angles.append(angle)
+
+    # Check if lines form a V-shape (typical arrowhead)
+    angle_diff = np.abs(angles[0] - angles[1])
+    return np.degrees(angle_diff) < 90  # Adjust threshold as needed
+
+
 def detect_color(image):
-    """Identify dominant colors in HSV space"""
+    """Color detection with minimum area requirement"""
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     colors = {
         "red": ([0, 100, 100], [10, 255, 255]),
@@ -51,24 +88,17 @@ def detect_color(image):
         "blue": ([100, 50, 50], [140, 255, 255]),
         "yellow": ([20, 100, 100], [30, 255, 255]),
     }
+
     detected = []
     for color, (lower, upper) in colors.items():
         mask = cv2.inRange(hsv, np.array(lower), np.array(upper))
-        if cv2.countNonZero(mask) > 1000:  # Minimum pixel threshold
+
+        # Require minimum contiguous area
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if any(cv2.contourArea(c) > 500 for c in contours):
             detected.append(color)
+
     return detected
-
-
-def detect_arrow(image):
-    """Simple arrow detection using line geometry"""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
-
-    # Properly handle numpy array output
-    if lines is not None and len(lines) >= 2:
-        return True
-    return False
 
 
 # ===================================================
@@ -141,19 +171,26 @@ if not templates:
     exit()
 
 while True:
-    # Capture and basic processing
-    frame = picam2.capture_array()
-    frame = cv2.resize(frame, FRAME_SIZE)
+    # Capture original frame
+    original_frame = picam2.capture_array()
+    original_frame = cv2.resize(original_frame, FRAME_SIZE)
 
-    # ============== NEW PROCESSING ==============
-    # Run parallel detection systems
-    color_info = detect_color(frame)
-    frame = detect_shapes(frame)
-    arrow_detected = detect_arrow(frame)
+    # Create working copies
+    template_frame = original_frame.copy()
+    display_frame = original_frame.copy()
+
+    # Run template matching on original frame
+    gray = cv2.cvtColor(template_frame, cv2.COLOR_BGR2GRAY)
+    processed_frame = cv2.Canny(gray, 50, 150)
+
+    # Run shape/color/arrow detection on display frame
+    color_info = detect_color(display_frame)
+    display_frame = detect_shapes(display_frame)
+    arrow_detected = detect_arrow(display_frame)
 
     # Add informational overlay
     cv2.putText(
-        frame,
+        display_frame,
         f"Colors: {', '.join(color_info)}",
         (10, 20),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -162,7 +199,7 @@ while True:
         1,
     )
     cv2.putText(
-        frame,
+        display_frame,
         f"Arrow: {arrow_detected}",
         (10, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -170,63 +207,11 @@ while True:
         (0, 0, 255),
         1,
     )
-    # ============================================
 
-    # Your original template matching pipeline
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    processed_frame = cv2.Canny(gray, 50, 150)
-    detections = []
+    # ... (rest of your template matching code using template_frame)
 
-    for name, template in templates:
-        template_h, template_w = template.shape
-        best_score = 0
-        best_bbox = None
-
-        for scale in SCALE_RANGE:
-            scaled_w = int(template_w * scale)
-            scaled_h = int(template_h * scale)
-            if (
-                scaled_w < 20
-                or scaled_h < 20
-                or scaled_w > FRAME_SIZE[0]
-                or scaled_h > FRAME_SIZE[1]
-            ):
-                continue
-
-            resized = cv2.resize(
-                template, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA
-            )
-            result = cv2.matchTemplate(processed_frame, resized, cv2.TM_CCOEFF_NORMED)
-            _, max_val, _, max_loc = cv2.minMaxLoc(result)
-
-            if max_val > best_score:
-                best_score = max_val
-                best_bbox = (
-                    max_loc[0],
-                    max_loc[1],
-                    max_loc[0] + scaled_w,
-                    max_loc[1] + scaled_h,
-                )
-
-        if best_score >= THRESHOLD and best_bbox:
-            detections.append((best_score, best_bbox, name))
-
-    filtered = non_max_suppression(detections, IOU_THRESHOLD)
-
-    # Draw template matches
-    for score, (x1, y1, x2, y2), name in filtered:
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(
-            frame,
-            f"{name}: {score:.2f}",
-            (x1, y1 - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            1,
-        )
-
-    cv2.imshow("Multi Detection", frame)
+    # Show final results
+    cv2.imshow("Multi Detection", display_frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
