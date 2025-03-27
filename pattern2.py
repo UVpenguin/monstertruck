@@ -36,7 +36,7 @@ picam2.configure(preview_config)
 picam2.start()
 
 time.sleep(2)
-threshold = 0.7
+threshold = 0.5
 frame_count = 0
 
 while True:
