@@ -40,9 +40,6 @@ frame_count = 0
 
 while True:
     ret, frame = camera.read()
-    if not ret:
-        print("Error: Frame capture failed.")
-        break
 
     # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
