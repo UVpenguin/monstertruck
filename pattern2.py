@@ -18,7 +18,7 @@ template_files = get_template_images(templates_folder)
 if not template_files:
     print("No template images found in folder:", templates_folder)
 
-# Load templates into a list of (filename, image) tuples in grayscale
+# Load templates in grayscale for faster processing
 templates = []
 for file in template_files:
     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
@@ -46,17 +46,21 @@ while True:
 
     # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
-    # Convert frame to grayscale once for matching
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Check if the frame is already grayscale (2D) or in color (3D)
+    if len(frame.shape) == 3 and frame.shape[2] == 3:
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    else:
+        gray_frame = frame  # Frame is already grayscale
 
     frame_count += 1
-    if frame_count % 3 == 0:  # process every third frame
+    if frame_count % 3 == 0:  # Process every third frame to reduce load
         for file, template in templates:
             best_val = -1
             best_loc = None
             best_scale = 1.0
 
-            # Limit the number of scales and narrow range
+            # Loop through different scales
             for scale in np.linspace(0.5, 1.2, 10):
                 try:
                     resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
@@ -70,7 +74,7 @@ while True:
                 if gray_frame.shape[0] < h or gray_frame.shape[1] < w:
                     continue
 
-                # Template matching on the grayscale image
+                # Perform template matching on the grayscale image
                 result = cv2.matchTemplate(
                     gray_frame, resized_template, cv2.TM_CCOEFF_NORMED
                 )
@@ -81,7 +85,7 @@ while True:
                     best_loc = max_loc
                     best_scale = scale
 
-            # Draw rectangle if match exceeds threshold and valid match exists
+            # Draw rectangle if match exceeds threshold and a valid match is found
             if best_val >= threshold and best_loc is not None:
                 resized_template = cv2.resize(
                     template, (0, 0), fx=best_scale, fy=best_scale
@@ -89,19 +93,38 @@ while True:
                 h, w = resized_template.shape
                 top_left = best_loc
                 bottom_right = (top_left[0] + w, top_left[1] + h)
-                cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
                 label = f"{os.path.basename(file)}: {best_val:.2f}"
-                cv2.putText(
-                    frame,
-                    label,
-                    (top_left[0], top_left[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 255, 0),
-                    2,
-                )
 
-    cv2.imshow("Live Feed", frame)
+                # Draw on the original frame if it's in color, or on gray_frame if not
+                if len(frame.shape) == 3 and frame.shape[2] == 3:
+                    cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
+                    cv2.putText(
+                        frame,
+                        label,
+                        (top_left[0], top_left[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2,
+                    )
+                else:
+                    cv2.rectangle(gray_frame, top_left, bottom_right, 255, 2)
+                    cv2.putText(
+                        gray_frame,
+                        label,
+                        (top_left[0], top_left[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        255,
+                        2,
+                    )
+
+    # Display the appropriate frame
+    if len(frame.shape) == 3 and frame.shape[2] == 3:
+        cv2.imshow("Live Feed", frame)
+    else:
+        cv2.imshow("Live Feed", gray_frame)
+
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
