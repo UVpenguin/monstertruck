@@ -41,13 +41,15 @@ while True:
         print("Error: Frame capture failed.")
         break
 
+    frame = cv2.resize(frame, (320, 240))
+
     # For each template, do multi-scale matching
     for file, template in templates:
         best_val = -1
         best_loc = None
         best_scale = 1.0
 
-        for scale in np.linspace(0.1, 1.5, 20):
+        for scale in np.linspace(0.1, 1.5, 10):
             try:
                 resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
             except cv2.error as e:
