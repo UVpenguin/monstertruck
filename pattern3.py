@@ -4,6 +4,7 @@ import os
 import glob
 import time
 from picamera2 import Picamera2  # type: ignore
+import collections
 
 
 # ================== UPDATED DETECTORS ==================
@@ -58,83 +59,75 @@ def detect_shapes(image):
     return image
 
 
-# Global variable to smooth the angle over frames
-prev_angle = None
+# Global history for smoothing arrow direction over the last few frames
+arrow_history = collections.deque(maxlen=5)
 
 
-def detect_arrow(image, area_threshold=1000, smooth_factor=0.8):
+def get_smoothed_direction(new_direction):
+    """Keep a history of directions and return the majority vote."""
+    arrow_history.append(new_direction)
+    # Get the most common direction in the history
+    return max(set(arrow_history), key=arrow_history.count)
+
+
+def detect_arrow(image, area_threshold=1000):
     """
-    Detects an arrow in the image using contour detection and line fitting.
-    Returns a tuple (detected: bool, direction: str or None).
-    The direction is one of: "left", "right", "up", "down".
-
-    Parameters:
-      area_threshold: Minimum contour area to be considered an arrow.
-      smooth_factor: Smoothing coefficient (between 0 and 1). Higher values mean more smoothing.
+    Detects an arrow by finding the largest contour, assuming it is the arrow.
+    It then computes the centroid and finds the farthest point on the contour as the tip.
+    Returns a tuple (detected: bool, direction: str) and overlays an arrow on the image.
     """
-    global prev_angle
-
-    # Preprocess image: convert to gray and apply blur and thresholding
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    ret, thresh = cv2.threshold(
-        blurred, 50, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
-    )
+    # Blur and threshold to create a binary image
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Using THRESH_BINARY_INV because arrows on a light background (or vice versa)
+    ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_BINARY_INV)
 
-    # Find contours and select the largest one (assuming it's the arrow)
+    # Find contours and get the largest one
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    arrow_contour = None
-    max_area = 0
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > max_area and area > area_threshold:
-            max_area = area
-            arrow_contour = cnt
-
-    if arrow_contour is None:
+    if not contours:
         return False, None
 
-    # Fit a line to the arrow contour (using all its points)
-    # cv2.fitLine returns (vx, vy, x0, y0)
-    vx, vy, x0, y0 = cv2.fitLine(arrow_contour, cv2.DIST_L2, 0, 0.01, 0.01)
-    angle = np.arctan2(vy, vx) * 180.0 / np.pi  # angle in degrees
-    angle = float(angle)  # convert to standard float
+    arrow_contour = max(contours, key=cv2.contourArea)
+    if cv2.contourArea(arrow_contour) < area_threshold:
+        return False, None
 
-    # Apply exponential smoothing to reduce jitter
-    if prev_angle is None:
-        smoothed_angle = angle
-    else:
-        smoothed_angle = smooth_factor * prev_angle + (1 - smooth_factor) * angle
-    prev_angle = smoothed_angle
+    # Calculate centroid of the arrow contour
+    M = cv2.moments(arrow_contour)
+    if M["m00"] == 0:
+        return False, None
+    cx = int(M["m10"] / M["m00"])
+    cy = int(M["m01"] / M["m00"])
+    centroid = np.array([cx, cy])
 
-    # Map the smoothed angle to a cardinal direction.
-    # In image coordinates, x increases to the right and y increases downward.
-    # Right: angle around 0°, Down: angle around 90°, Left: around 180° (or -180°), Up: around -90°.
-    if -45 <= smoothed_angle < 45:
-        direction = "right"
-    elif 45 <= smoothed_angle < 135:
-        direction = "down"
-    elif smoothed_angle >= 135 or smoothed_angle < -135:
-        direction = "left"
-    else:
-        direction = "up"
+    # Find the contour point farthest from the centroid (arrow tip)
+    farthest = None
+    max_dist = 0
+    for point in arrow_contour:
+        pt = point[0]
+        dist = np.linalg.norm(np.array(pt) - centroid)
+        if dist > max_dist:
+            max_dist = dist
+            farthest = pt
 
-    # Optionally, draw a bounding box and a line indicating the detected arrow orientation.
-    rect = cv2.minAreaRect(arrow_contour)
-    box = cv2.boxPoints(rect)
-    box = np.intp(box)
-    cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
-    # Draw a line representing the direction; use the line fit center (x0, y0) and a scaled vector.
-    line_length = 50
-    pt1 = (int(x0), int(y0))
-    pt2 = (int(x0 + vx * line_length), int(y0 + vy * line_length))
-    cv2.arrowedLine(image, pt1, pt2, (255, 0, 0), 2, tipLength=0.3)
+    if farthest is None:
+        return False, None
+
+    # Determine arrow direction based on the vector from centroid to farthest point
+    dx = farthest[0] - cx
+    dy = farthest[1] - cy
+    if abs(dx) > abs(dy):  # Horizontal motion dominates
+        direction = "right" if dx > 0 else "left"
+    else:  # Vertical motion dominates
+        direction = "down" if dy > 0 else "up"
+
+    # Draw the arrow on the image for visualization
+    cv2.arrowedLine(image, (cx, cy), tuple(farthest), (0, 255, 0), 3, tipLength=0.3)
     cv2.putText(
         image,
         f"Arrow: {direction}",
         (10, 60),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
+        0.5,
         (0, 0, 255),
         2,
     )
@@ -249,7 +242,11 @@ while True:
     # Run shape/color/arrow detection on display frame
     color_info = detect_color(display_frame)
     display_frame = detect_shapes(display_frame)
-    arrow_detected, arrow_direction = detect_arrow(display_frame)
+    detected, direction = detect_arrow(display_frame)
+    if detected and direction is not None:
+        smooth_direction = get_smoothed_direction(direction)
+    else:
+        smooth_direction = "None"
 
     # Add informational overlay
     cv2.putText(
@@ -263,7 +260,7 @@ while True:
     )
     cv2.putText(
         display_frame,
-        f"Arrow: {arrow_direction if arrow_detected else 'None'}",
+        f"Arrow: {smooth_direction}",
         (10, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
