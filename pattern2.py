@@ -35,7 +35,7 @@ picam2.configure(preview_config)
 picam2.start()
 
 time.sleep(2)
-threshold = 0.6
+threshold = 0.7
 frame_width, frame_height = 320, 240  # Match resize dimensions
 
 while True:
