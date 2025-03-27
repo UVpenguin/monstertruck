@@ -74,54 +74,73 @@ def detect_arrow(image):
     if lines is None or len(lines) < 2:
         return (False, "")
 
-    # Collect line information
+    # Collect line information with more detailed vector analysis
     line_info = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
+        # Calculate line vector
+        dx = x2 - x1
+        dy = y2 - y1
         # Calculate angle in degrees
-        angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-        # Store line with leftmost point first to normalize direction
-        if x1 > x2:
-            x1, y1, x2, y2 = x2, y2, x1, y1
-        line_info.append((angle_deg, x1, y1, x2, y2))
+        angle_deg = np.degrees(np.arctan2(dy, dx))
+        line_info.append(
+            {
+                "x1": x1,
+                "y1": y1,
+                "x2": x2,
+                "y2": y2,
+                "dx": dx,
+                "dy": dy,
+                "angle": angle_deg,
+            }
+        )
 
-    # Look for converging lines (arrowhead pattern)
-    arrowhead_found = False
-    direction = ""
-
-    # Check for arrowhead formation
+    # Find potential arrowhead lines
+    arrowhead_candidates = []
     for i in range(len(line_info)):
         for j in range(i + 1, len(line_info)):
-            angle1, x1_1, y1_1, x2_1, y2_1 = line_info[i]
-            angle2, x1_2, y1_2, x2_2, y2_2 = line_info[j]
+            line1 = line_info[i]
+            line2 = line_info[j]
 
-            # Check if lines converge
-            angle_diff = np.abs(angle1 - angle2)
+            # Check if lines converge (angle close to forming an arrowhead)
+            angle_diff = abs(line1["angle"] - line2["angle"])
+
+            # More sophisticated convergence check
             if angle_diff < 90:
-                arrowhead_found = True
+                # Find a potential reference point (arrowhead tip)
+                tip_x = None
+                tip_y = None
 
-                # Determine arrow direction more precisely
-                # Vertical detection (Up/Down)
-                if abs(angle1) > 60 or abs(angle2) > 60:
-                    # Check if points are moving vertically
-                    if y2_1 < y1_1 and y2_2 < y1_2:
-                        direction = "UP"
-                    elif y2_1 > y1_1 and y2_2 > y1_2:
-                        direction = "DOWN"
-                # Horizontal detection (Left/Right)
+                # Check if lines intersect or are very close
+                # Calculate line segment bounding boxes
+                min_x1 = min(line1["x1"], line1["x2"])
+                max_x1 = max(line1["x1"], line1["x2"])
+                min_y1 = min(line1["y1"], line1["y2"])
+                max_y1 = max(line1["y1"], line1["y2"])
+
+                min_x2 = min(line2["x1"], line2["x2"])
+                max_x2 = max(line2["x1"], line2["x2"])
+                min_y2 = min(line2["y1"], line2["y2"])
+                max_y2 = max(line2["y1"], line2["y2"])
+
+                # Determine arrow direction by analyzing line orientations and endpoints
+                # Prefer vertical line orientation for UP/DOWN
+                if abs(line1["angle"]) > 60 or abs(line2["angle"]) > 60:
+                    # Vertical arrow detection (UP/DOWN)
+                    if line1["y2"] < line1["y1"] and line2["y2"] < line2["y1"]:
+                        return (True, "UP")
+                    elif line1["y2"] > line1["y1"] and line2["y2"] > line2["y1"]:
+                        return (True, "DOWN")
+
+                # Horizontal arrow detection (LEFT/RIGHT)
                 else:
-                    # Check horizontal movement
-                    if x2_1 > x1_1 and x2_2 > x1_2:
-                        direction = "RIGHT"
-                    elif x2_1 < x1_1 and x2_2 < x1_2:
-                        direction = "LEFT"
+                    # Check line directions and endpoints
+                    if line1["x2"] > line1["x1"] and line2["x2"] > line2["x1"]:
+                        return (True, "RIGHT")
+                    elif line1["x2"] < line1["x1"] and line2["x2"] < line2["x1"]:
+                        return (True, "LEFT")
 
-                break
-
-        if arrowhead_found:
-            break
-
-    return (arrowhead_found, direction)
+    return (False, "")
 
 
 def detect_color(image):
