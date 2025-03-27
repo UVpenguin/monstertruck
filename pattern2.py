@@ -3,7 +3,7 @@ import numpy as np
 import os
 import glob
 import time
-from picamera2 import Picamera2  # type: ignore
+from picamera2 import Picamera2
 
 
 def get_template_images(folder):
@@ -19,56 +19,58 @@ template_files = get_template_images(templates_folder)
 if not template_files:
     print("No template images found in folder:", templates_folder)
 
-# Load templates in grayscale (should be np.uint8 by default)
 templates = []
 for file in template_files:
     img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
     if img is not None:
-        # Ensure the template is 8-bit
         img = img.astype(np.uint8)
         templates.append((file, img))
     else:
         print(f"Warning: Could not load {file}")
 
 picam2 = Picamera2()
-picam2.configure(picam2.create_preview_configuration())
+
+# Configure camera to use a 3-channel format (BGR888) to avoid 4-channel issues
+preview_config = picam2.create_preview_configuration(main={"format": "BGR888"})
+picam2.configure(preview_config)
 picam2.start()
 
-# Allow the camera to warm up
 time.sleep(2)
-
 threshold = 0.7
 frame_count = 0
 
 while True:
-    # Capture frame from Picamera2
     frame = picam2.capture_array()
-
-    # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
 
-    # If frame has three channels, convert to grayscale.
-    if len(frame.shape) == 3 and frame.shape[2] == 3:
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Convert frame to grayscale based on number of channels
+    if len(frame.shape) == 3:
+        num_channels = frame.shape[2]
+        if num_channels == 4:
+            # Extract BGR from XBGR (channels 1, 2, 3)
+            bgr = frame[:, :, 1:4]
+            gray_frame = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        elif num_channels == 3:
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        else:
+            # Fallback for unexpected channels
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     else:
-        gray_frame = frame  # Frame is already grayscale
+        gray_frame = frame  # Already 2D
 
-    # Ensure the captured frame is 8-bit.
     gray_frame = cv2.convertScaleAbs(gray_frame)
     gray_frame = gray_frame.astype(np.uint8)
 
-    # Debug: print the type and shape of the frame (once every few frames)
     if frame_count % 30 == 0:
         print("gray_frame type:", gray_frame.dtype, "shape:", gray_frame.shape)
 
     frame_count += 1
-    if frame_count % 3 == 0:  # Process every third frame to reduce load
+    if frame_count % 3 == 0:
         for file, template in templates:
             best_val = -1
             best_loc = None
             best_scale = 1.0
 
-            # Loop through different scales
             for scale in np.linspace(0.5, 1.2, 10):
                 try:
                     resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
@@ -76,16 +78,10 @@ while True:
                     print("Resize error:", e)
                     continue
 
-                # Debug: check the resized template type and shape
-                # print("resized_template type:", resized_template.dtype, "shape:", resized_template.shape)
-
                 h, w = resized_template.shape
-
-                # Skip if the resized template is larger than the frame
                 if gray_frame.shape[0] < h or gray_frame.shape[1] < w:
                     continue
 
-                # Perform template matching on the grayscale image
                 result = cv2.matchTemplate(
                     gray_frame, resized_template, cv2.TM_CCOEFF_NORMED
                 )
@@ -96,7 +92,6 @@ while True:
                     best_loc = max_loc
                     best_scale = scale
 
-            # Draw rectangle if match exceeds threshold and a valid match is found
             if best_val >= threshold and best_loc is not None:
                 resized_template = cv2.resize(
                     template, (0, 0), fx=best_scale, fy=best_scale
@@ -106,7 +101,6 @@ while True:
                 bottom_right = (top_left[0] + w, top_left[1] + h)
                 label = f"{os.path.basename(file)}: {best_val:.2f}"
 
-                # Draw on the original frame if it's in color, or on gray_frame if not
                 if len(frame.shape) == 3 and frame.shape[2] == 3:
                     cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
                     cv2.putText(
@@ -130,11 +124,10 @@ while True:
                         2,
                     )
 
-    # Display the appropriate frame
-    if len(frame.shape) == 3 and frame.shape[2] == 3:
-        cv2.imshow("Live Feed", frame)
-    else:
-        cv2.imshow("Live Feed", gray_frame)
+    display_frame = (
+        frame if (len(frame.shape) == 3 and frame.shape[2] == 3) else gray_frame
+    )
+    cv2.imshow("Live Feed", display_frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
