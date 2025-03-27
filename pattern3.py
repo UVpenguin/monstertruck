@@ -3,7 +3,7 @@ import numpy as np
 import os
 import glob
 import time
-from picamera2 import Picamera2 # type: ignore
+from picamera2 import Picamera2  # type: ignore
 
 
 # ================== NEW ADDITIONS ==================
@@ -19,11 +19,13 @@ def detect_shapes(image):
         approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
         vertices = len(approx)
 
+        # Get bounding box coordinates for all shapes
+        x, y, w, h = cv2.boundingRect(approx)
+
         shape = ""
         if vertices == 3:
             shape = "triangle"
         elif vertices == 4:
-            x, y, w, h = cv2.boundingRect(approx)
             ar = w / float(h)
             shape = "square" if 0.95 <= ar <= 1.05 else "rectangle"
         elif vertices == 5:
@@ -33,6 +35,7 @@ def detect_shapes(image):
 
         if shape:
             cv2.drawContours(image, [contour], -1, (0, 255, 0), 2)
+            # Use the bounding box coordinates for text placement
             cv2.putText(
                 image, shape, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2
             )
