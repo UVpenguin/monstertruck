@@ -67,26 +67,41 @@ def detect_arrow(image):
     - Tuple (bool, str) where first element is arrow presence,
       and second element is arrow direction
     """
+    # Create a copy for drawing debug information
+    debug_image = image.copy()
+
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
+
+    # Safely display edges
+    debug_edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
 
-    cv2.imshow("lines", lines)
-    cv2.imshow("edges", edges)
-
     if lines is None or len(lines) < 2:
+        # Display empty debug images if no lines found
+        cv2.imshow("Edges", debug_edges)
+        cv2.imshow("Lines", debug_image)
         return (False, "")
 
-    # Collect line information
+    # Collect line information and draw debug lines
     line_info = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
+
+        # Draw lines on debug image
+        cv2.line(debug_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
         # Calculate angle in degrees
         angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
         # Store line with leftmost point first to normalize direction
         if x1 > x2:
             x1, y1, x2, y2 = x2, y2, x1, y1
         line_info.append((angle_deg, x1, y1, x2, y2))
+
+    # Safely display debug images
+    cv2.imshow("Edges", debug_edges)
+    cv2.imshow("Lines", debug_image)
 
     # Look for converging lines (arrowhead pattern)
     arrowhead_found = False
@@ -234,7 +249,7 @@ while True:
     # Run shape/color/arrow detection on display frame
     color_info = detect_color(display_frame)
     display_frame = detect_shapes(display_frame)
-    direction, arrow_detected = detect_arrow(display_frame)
+    arrow_detected, direction = detect_arrow(display_frame)
 
     # Add informational overlay
     cv2.putText(
@@ -248,7 +263,7 @@ while True:
     )
     cv2.putText(
         display_frame,
-        f"Arrow: {arrow_detected}",
+        f"Arrow: {direction}",
         (10, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
@@ -256,10 +271,12 @@ while True:
         1,
     )
 
-    # ... (rest of your template matching code using template_frame)
+    # ... (rest of your template matching code)
 
     # Show final results
     cv2.imshow("Multi Detection", display_frame)
+
+    # Exit condition
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
