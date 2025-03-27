@@ -58,72 +58,73 @@ def detect_shapes(image):
     return image
 
 
-def detect_arrow(image, arrow_templates):
+def detect_arrow(image):
     """
-    Arrow detection using template matching
-
-    Args:
-    - image: Input image
-    - arrow_templates: List of template images for different arrow directions
+    Improved arrow detection with precise direction identification
 
     Returns:
-    - Tuple (bool, str) indicating arrow presence and direction
+    - False if no arrow detected
+    - Tuple (bool, str) where first element is arrow presence,
+      and second element is arrow direction
     """
-    # Prepare the image for template matching
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
 
-    # Store detections
-    detections = []
+    cv2.imshow("lines", lines)
+    cv2.imshow("edges", edges)
 
-    # Try to match each arrow template
-    for template_name, template in arrow_templates:
-        # Perform template matching
-        for scale in np.linspace(0.3, 1.5, 15):
-            # Resize template
-            resized_template = cv2.resize(template, None, fx=scale, fy=scale)
+    if lines is None or len(lines) < 2:
+        return (False, "")
 
-            # Perform template matching
-            result = cv2.matchTemplate(gray, resized_template, cv2.TM_CCOEFF_NORMED)
+    # Collect line information
+    line_info = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        # Calculate angle in degrees
+        angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
+        # Store line with leftmost point first to normalize direction
+        if x1 > x2:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        line_info.append((angle_deg, x1, y1, x2, y2))
 
-            # Find locations above threshold
-            locations = np.where(result >= 0.7)
+    # Look for converging lines (arrowhead pattern)
+    arrowhead_found = False
+    direction = ""
 
-            # Add detections
-            for pt in zip(*locations[::-1]):
-                # Get bounding box
-                h, w = resized_template.shape
-                detections.append(
-                    (
-                        result[pt[1], pt[0]],
-                        (pt[0], pt[1], pt[0] + w, pt[1] + h),
-                        template_name,
-                    )
-                )
+    # Check for arrowhead formation
+    for i in range(len(line_info)):
+        for j in range(i + 1, len(line_info)):
+            angle1, x1_1, y1_1, x2_1, y2_1 = line_info[i]
+            angle2, x1_2, y1_2, x2_2, y2_2 = line_info[j]
 
-    # Perform non-maximum suppression to remove overlapping detections
-    if detections:
-        detections = non_max_suppression(detections, iou_threshold=0.4)
+            # Check if lines converge
+            angle_diff = np.abs(angle1 - angle2)
+            if angle_diff < 90:
+                arrowhead_found = True
 
-    # Determine arrow presence and direction
-    if detections:
-        # Prioritize first detection
-        _, box, direction = detections[0]
+                # Determine arrow direction more precisely
+                # Vertical detection (Up/Down)
+                if abs(angle1) > 60 or abs(angle2) > 60:
+                    # Check if points are moving vertically
+                    if y2_1 < y1_1 and y2_2 < y1_2:
+                        direction = "UP"
+                    elif y2_1 > y1_1 and y2_2 > y1_2:
+                        direction = "DOWN"
+                # Horizontal detection (Left/Right)
+                else:
+                    # Check horizontal movement
+                    if x2_1 > x1_1 and x2_2 > x1_2:
+                        direction = "RIGHT"
+                    elif x2_1 < x1_1 and x2_2 < x1_2:
+                        direction = "LEFT"
 
-        # Optionally draw rectangle around detected arrow
-        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
-        cv2.putText(
-            image,
-            direction,
-            (box[0], box[1] - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 0, 255),
-            2,
-        )
+                break
 
-        return (True, direction)
+        if arrowhead_found:
+            break
 
-    return (False, "")
+    return (arrowhead_found, direction)
 
 
 def detect_color(image):
@@ -148,6 +149,10 @@ def detect_color(image):
     return detected
 
 
+# ===================================================
+
+
+# ============== YOUR ORIGINAL CODE ==============
 def compute_iou(box1, box2):
     x1_inter = max(box1[0], box2[0])
     y1_inter = max(box1[1], box2[1])
@@ -181,7 +186,6 @@ def non_max_suppression(detections, iou_threshold=0.4):
 
 
 def get_template_images(folder):
-    """Get template images, with special handling for arrow templates"""
     image_extensions = ["*.jpg", "*.jpeg", "*.png"]
     files = []
     for ext in image_extensions:
@@ -189,23 +193,10 @@ def get_template_images(folder):
 
     templates = []
     for file in files:
-        # Distinguish arrow templates
-        if "arrow" in file.lower():
-            img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-            if img is not None:
-                # Extract direction from filename
-                if "up" in file.lower():
-                    direction = "UP"
-                elif "down" in file.lower():
-                    direction = "DOWN"
-                elif "left" in file.lower():
-                    direction = "LEFT"
-                elif "right" in file.lower():
-                    direction = "RIGHT"
-                else:
-                    direction = os.path.splitext(os.path.basename(file))[0]
-
-                templates.append((direction, img.astype(np.uint8)))
+        img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            img = cv2.Canny(img, 50, 150)
+            templates.append((os.path.basename(file), img.astype(np.uint8)))
     return templates
 
 
@@ -222,11 +213,7 @@ SCALE_RANGE = np.linspace(0.3, 1.5, 15)
 THRESHOLD = 0.65
 IOU_THRESHOLD = 0.4
 
-# Load templates (including arrow templates)
 templates = get_template_images("templates")
-arrow_templates = [
-    t for t in templates if len(t[0]) <= 4
-]  # Assume direction-based template names
 if not templates:
     print("No valid templates found")
     exit()
@@ -240,12 +227,14 @@ while True:
     template_frame = original_frame.copy()
     display_frame = original_frame.copy()
 
+    # Run template matching on original frame
+    gray = cv2.cvtColor(template_frame, cv2.COLOR_BGR2GRAY)
+    processed_frame = cv2.Canny(gray, 50, 150)
+
     # Run shape/color/arrow detection on display frame
     color_info = detect_color(display_frame)
     display_frame = detect_shapes(display_frame)
-
-    # Detect arrow using template matching
-    arrow_detected, direction = detect_arrow(display_frame, arrow_templates)
+    direction, arrow_detected = detect_arrow(display_frame)
 
     # Add informational overlay
     cv2.putText(
@@ -259,13 +248,15 @@ while True:
     )
     cv2.putText(
         display_frame,
-        f"Arrow: {direction if arrow_detected else 'None'}",
+        f"Arrow: {arrow_detected}",
         (10, 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
         (0, 0, 255),
         1,
     )
+
+    # ... (rest of your template matching code using template_frame)
 
     # Show final results
     cv2.imshow("Multi Detection", display_frame)
