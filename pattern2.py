@@ -3,6 +3,7 @@ import numpy as np
 import os
 import glob
 import time
+from picamera2 import Picamera2  # type: ignore
 
 
 def get_template_images(folder):
@@ -27,10 +28,9 @@ for file in template_files:
     else:
         print(f"Warning: Could not load {file}")
 
-camera = cv2.VideoCapture(0)
-if not camera.isOpened():
-    print("Error: Could not open camera.")
-    exit()
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration())
+picam2.start()
 
 # Allow the camera to warm up
 time.sleep(2)
@@ -39,7 +39,7 @@ threshold = 0.7
 frame_count = 0
 
 while True:
-    ret, frame = camera.read()
+    frame = picam2.capture_array()
 
     # Resize frame to reduce processing load
     frame = cv2.resize(frame, (320, 240))
