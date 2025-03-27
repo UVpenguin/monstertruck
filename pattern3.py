@@ -64,7 +64,11 @@ def detect_arrow(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
-    return bool(lines and len(lines) >= 2)  # At least 2 lines
+
+    # Properly handle numpy array output
+    if lines is not None and len(lines) >= 2:
+        return True
+    return False
 
 
 # ===================================================
