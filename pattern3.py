@@ -148,44 +148,56 @@ while True:
             thresh_crop.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # Decide which contour to use for extreme point extraction.
-        # If the detected shape is a circle, look for a child contour (which might be the arrow).
         contour_to_use = None
-        if shape_name == "circle":
-            # Look for a contour with a parent (i.e. inner contour)
-            # crop_hierarchy is an array of shape (numContours, 4) where each entry is [next, previous, first_child, parent]
+        if shape_name == "circle" and crop_hierarchy is not None:
+            # Compute outer centroid relative to the cropped ROI.
+            outer_cx, outer_cy = (w // 2, h // 2)
+            candidates = []
             for idx, hier in enumerate(crop_hierarchy[0]):
-                # If the contour has a parent (hier[3] != -1), we assume it's the inner arrow.
+                # Look for contours that have a parent.
                 if hier[3] != -1:
-                    contour_to_use = crop_contours[idx]
-                    break
-        # If no inner contour was found (or the shape isn't a circle), use the largest contour.
+                    # Compute centroid of candidate contour.
+                    M_inner = cv2.moments(crop_contours[idx])
+                    if M_inner["m00"] != 0:
+                        inner_cx = int(M_inner["m10"] / M_inner["m00"])
+                        inner_cy = int(M_inner["m01"] / M_inner["m00"])
+                    else:
+                        inner_cx, inner_cy = 0, 0
+                    dist = np.sqrt(
+                        (inner_cx - outer_cx) ** 2 + (inner_cy - outer_cy) ** 2
+                    )
+                    candidates.append((dist, crop_contours[idx]))
+            if candidates:
+                # Choose the candidate closest to the outer centroid.
+                candidates.sort(key=lambda x: x[0])
+                contour_to_use = candidates[0][1]
+
+        # If no appropriate inner contour was found, fall back to the largest contour.
         if contour_to_use is None and crop_contours:
             contour_to_use = max(crop_contours, key=cv2.contourArea)
 
-        # Convert the threshold crop to BGR to draw colored markers.
+        # Convert threshold crop to BGR to draw colored markers.
         thresh_crop_color = cv2.cvtColor(thresh_crop, cv2.COLOR_GRAY2BGR)
 
         if contour_to_use is not None:
-            # Get the 4 extreme points from the chosen contour.
+            # Extract the four extreme points.
             leftmost = tuple(contour_to_use[contour_to_use[:, :, 0].argmin()][0])
             rightmost = tuple(contour_to_use[contour_to_use[:, :, 0].argmax()][0])
             topmost = tuple(contour_to_use[contour_to_use[:, :, 1].argmin()][0])
             bottommost = tuple(contour_to_use[contour_to_use[:, :, 1].argmax()][0])
 
-            # Draw circles on each extreme point.
+            # Draw circles at the extreme points.
             cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
             cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
             cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
             cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
-
-            # Optionally, draw lines connecting these points.
+            # Optionally, draw lines connecting them.
             cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
             cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
             cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
             cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
 
-        # Use this processed image for display.
+        # Use the processed crop for display.
         display_crop = thresh_crop_color
         break
 
