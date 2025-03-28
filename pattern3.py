@@ -1,5 +1,6 @@
 import cv2
 import time
+import numpy as np
 from picamera2 import Picamera2  # type: ignore
 
 
@@ -68,6 +69,7 @@ picam2.configure(preview_config)
 picam2.start()
 time.sleep(2)
 
+cropped_contours = []
 
 while True:
     # Capture original frame
@@ -80,15 +82,12 @@ while True:
     )
     thresh = cv2.erode(thresh, None, iterations=2)
     thresh = cv2.dilate(thresh, None, iterations=2)
-    inv_thresh = ~thresh
+
+    cropped_contours.clear()
 
     # Find contours.
     contours, hierarchy = cv2.findContours(
         thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-
-    inv_contours, inv_hierarchy = cv2.findContours(
-        inv_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
     for contour in contours:
@@ -119,41 +118,17 @@ while True:
             (255, 0, 0),
             2,
         )
-    for contour in inv_contours:  # check inverse of binary image
-        if (
-            cv2.contourArea(contour) > 300
-        ):  # skip if the contour is too big (removes background)
-            continue
 
-        shape_name, approx = detect_shape(contour)
-        label = shape_name
+        x, y, w, h = cv2.boundingRect(contour)
+        cropped_box = frame[y : y + h, x : x + w]
+        cropped_contours.append(cropped_box)
 
-        if shape_name == "arrow":
-            direction = get_arrow_direction(contour)
-            label += " (" + direction + ")"
-
-        M = cv2.moments(contour)
-        if M["m00"] != 0:
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-        else:
-            cX, cY = 0, 0
-
-        cv2.drawContours(frame, [approx], -1, (0, 255, 0), 2)
-        cv2.putText(
-            frame,
-            label,
-            (cX - 50, cY),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 0, 0),
-            2,
-        )
+        for idx, crop in enumerate(cropped_contours):
+            cv2.imshow(f"Cropped {idx}", crop)
 
     # Display
     cv2.imshow("Detected Shapes", frame)
     cv2.imshow("thresholding", thresh)
-    cv2.imshow("iverted thresh", inv_thresh)
 
     # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord("q"):
