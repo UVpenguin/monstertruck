@@ -207,7 +207,7 @@ while True:
                 cv2.putText(
                     frame,
                     f"{label}",
-                    (cX - 50, cY -20),
+                    (cX - 50, cY +20),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.6,
                     (0, 0, 255),
