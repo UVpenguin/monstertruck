@@ -7,141 +7,141 @@ from picamera2 import Picamera2
 
 
 def compute_iou(box1, box2):
-    """Calculate Intersection over Union (IoU) between two bounding boxes"""
-    x1_inter = max(box1[0], box2[0])
-    y1_inter = max(box1[1], box2[1])
-    x2_inter = min(box1[2], box2[2])
-    y2_inter = min(box1[3], box2[3])
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
 
-    if x2_inter < x1_inter or y2_inter < y1_inter:
-        return 0.0
-
-    area_inter = (x2_inter - x1_inter) * (y2_inter - y1_inter)
-    area_box1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
-    area_box2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
-
-    return area_inter / (area_box1 + area_box2 - area_inter)
+    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
+    union_area = (
+        (box1[2] - box1[0]) * (box1[3] - box1[1])
+        + (box2[2] - box2[0]) * (box2[3] - box2[1])
+        - inter_area
+    )
+    return inter_area / union_area if union_area else 0
 
 
-def non_max_suppression(detections, iou_threshold=0.4):
-    """Apply non-maximum suppression to detection results"""
+def non_max_suppression(detections, iou_thresh=0.4):
     if not detections:
         return []
 
-    detections = sorted(detections, key=lambda x: x[0], reverse=True)
+    detections = sorted(detections, key=lambda x: -x[0])
     keep = []
+    suppressed = set()
 
-    while detections:
-        current = detections.pop(0)
-        keep.append(current)
-        detections = [
-            det for det in detections if compute_iou(current[1], det[1]) < iou_threshold
-        ]
-
+    for i in range(len(detections)):
+        if i in suppressed:
+            continue
+        keep.append(detections[i])
+        for j in range(i + 1, len(detections)):
+            if compute_iou(detections[i][1], detections[j][1]) > iou_thresh:
+                suppressed.add(j)
     return keep
 
 
-def get_template_images(folder):
-    """Load template images with edge detection preprocessing"""
-    image_extensions = ["*.jpg", "*.jpeg", "*.png"]
-    files = []
-    for ext in image_extensions:
-        files.extend(glob.glob(os.path.join(folder, "**", ext), recursive=True))
+def get_template_pyramid(template, scales):
+    pyramids = []
+    h, w = template.shape
+    for scale in scales:
+        if scale <= 0:
+            continue
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        if new_w < 20 or new_h < 20:
+            continue
+        resized = cv2.resize(template, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        pyramids.append((new_w, new_h, resized))
+    return pyramids
 
+
+def load_templates(folder):
     templates = []
-    for file in files:
-        img = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-        if img is not None:
-            img = cv2.Canny(img, 50, 150)  # Edge detection
-            templates.append((os.path.basename(file), img.astype(np.uint8)))
-
+    for path in glob.glob(os.path.join(folder, "**/*.jpg"), recursive=True):
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            continue
+        blurred = cv2.GaussianBlur(img, (3, 3), 0)
+        edged = cv2.Canny(blurred, 50, 150)
+        templates.append(
+            (
+                os.path.basename(path),
+                edged.astype(np.uint8),
+                get_template_pyramid(edged, SCALE_RANGE),
+            )
+        )
     return templates
 
 
 # Initialize camera
 picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration(main={"format": "BGR888"})
+preview_config = picam2.create_preview_configuration(
+    main={"format": "BGR888", "size": (320, 240)}
+)
 picam2.configure(preview_config)
 picam2.start()
 time.sleep(2)
 
 # Configuration
-FRAME_SIZE = (320, 240)
-SCALE_RANGE = np.linspace(0.3, 1.5, 15)  # Optimized scale range
-THRESHOLD = 0.65  # Increased threshold for better precision
-IOU_THRESHOLD = 0.4  # NMS overlap threshold
+SCALE_RANGE = np.logspace(np.log10(0.3), np.log10(1.5), num=10, base=10.0)
+THRESHOLD = 0.68
+IOU_THRESHOLD = 0.4
+GAUSSIAN_KERNEL = (5, 5)
+MIN_EDGE_THRESHOLD = 50
+MAX_EDGE_THRESHOLD = 150
 
-# Load templates with edge preprocessing
-templates = get_template_images("templates")
+# Load templates with precomputed pyramids
+templates = load_templates("templates")
 if not templates:
-    print("No valid templates found")
+    print("No templates found")
     exit()
 
-while True:
-    # Capture and preprocess frame
-    frame = picam2.capture_array()
-    frame = cv2.resize(frame, FRAME_SIZE)
+
+def process_frame(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    processed_frame = cv2.Canny(gray, 50, 150)  # Edge detection
+    blurred = cv2.GaussianBlur(gray, GAUSSIAN_KERNEL, 0)
+    edged = cv2.Canny(blurred, MIN_EDGE_THRESHOLD, MAX_EDGE_THRESHOLD)
 
     detections = []
 
-    for name, template in templates:
-        template_h, template_w = template.shape
+    for name, _, pyramids in templates:
         best_score = 0
         best_bbox = None
 
-        for scale in SCALE_RANGE:
-            # Skip templates that become too small or too large
-            scaled_w = int(template_w * scale)
-            scaled_h = int(template_h * scale)
-            if (
-                scaled_w < 20
-                or scaled_h < 20
-                or scaled_w > FRAME_SIZE[0]
-                or scaled_h > FRAME_SIZE[1]
-            ):
+        for w, h, tpl in pyramids:
+            if w > frame.shape[1] or h > frame.shape[0]:
                 continue
 
-            # Resize with edge-preserving interpolation
-            resized = cv2.resize(
-                template, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA
-            )
+            res = cv2.matchTemplate(edged, tpl, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(res)
 
-            # Perform template matching
-            result = cv2.matchTemplate(processed_frame, resized, cv2.TM_CCOEFF_NORMED)
-            _, max_val, _, max_loc = cv2.minMaxLoc(result)
-
-            if max_val > best_score:
+            if max_val > best_score and max_val > THRESHOLD:
                 best_score = max_val
-                best_bbox = (
-                    max_loc[0],
-                    max_loc[1],
-                    max_loc[0] + scaled_w,
-                    max_loc[1] + scaled_h,
-                )
+                best_bbox = (max_loc[0], max_loc[1], max_loc[0] + w, max_loc[1] + h)
 
-        if best_score >= THRESHOLD and best_bbox is not None:
+        if best_bbox:
             detections.append((best_score, best_bbox, name))
 
-    # Apply non-maximum suppression
-    filtered = non_max_suppression(detections, IOU_THRESHOLD)
+    return non_max_suppression(detections, IOU_THRESHOLD)
 
-    # Draw remaining detections
+
+while True:
+    frame = picam2.capture_array()
+    filtered = process_frame(frame)
+
     for score, (x1, y1, x2, y2), name in filtered:
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(
             frame,
             f"{name}: {score:.2f}",
-            (x1, y1 - 10),
+            (x1, y1 - 5),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (0, 255, 0),
             1,
         )
 
-    cv2.imshow("Object Detection", frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    cv2.imshow("Detection", frame)
+    if cv2.waitKey(1) == ord("q"):
         break
 
 picam2.stop()
