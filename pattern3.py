@@ -183,8 +183,8 @@ while True:
         ret, thresh_crop = cv2.threshold(
             gray_crop, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
         )
-        thresh_crop = cv2.erode(thresh, None, iterations=2)
-        thresh_crop = cv2.dilate(thresh, None, iterations=2)
+        thresh_crop = cv2.erode(thresh_crop, None, iterations=2)
+        thresh_crop = cv2.dilate(thresh_crop, None, iterations=2)
         thresholded_images.append(thresh_crop)
 
         # Detect contours in the thresholded cropped image.
