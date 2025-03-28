@@ -162,7 +162,7 @@ while True:
             (cX - 50, cY - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 255, 255),
+            (0, 0, 255),
             2,
         )
 
