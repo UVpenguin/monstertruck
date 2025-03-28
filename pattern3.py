@@ -145,40 +145,47 @@ while True:
 
         # Detect contours in the thresholded cropped image.
         crop_contours, crop_hierarchy = cv2.findContours(
-            thresh_crop.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            thresh_crop.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
         )
 
-        # Convert threshold image to color so contours can be drawn in color.
+        # Decide which contour to use for extreme point extraction.
+        # If the detected shape is a circle, look for a child contour (which might be the arrow).
+        contour_to_use = None
+        if shape_name == "circle":
+            # Look for a contour with a parent (i.e. inner contour)
+            # crop_hierarchy is an array of shape (numContours, 4) where each entry is [next, previous, first_child, parent]
+            for idx, hier in enumerate(crop_hierarchy[0]):
+                # If the contour has a parent (hier[3] != -1), we assume it's the inner arrow.
+                if hier[3] != -1:
+                    contour_to_use = crop_contours[idx]
+                    break
+        # If no inner contour was found (or the shape isn't a circle), use the largest contour.
+        if contour_to_use is None and crop_contours:
+            contour_to_use = max(crop_contours, key=cv2.contourArea)
+
+        # Convert the threshold crop to BGR to draw colored markers.
         thresh_crop_color = cv2.cvtColor(thresh_crop, cv2.COLOR_GRAY2BGR)
-        cv2.drawContours(thresh_crop_color, crop_contours, -1, (0, 255, 0), 2)
 
-        # For each contour in the cropped image, get the 4 extreme points and draw them.
-        for cnt in crop_contours:
-            print(cv2.contourArea(cnt))
-            if cv2.contourArea(crop_contours) < 100:
-                continue
+        if contour_to_use is not None:
+            # Get the 4 extreme points from the chosen contour.
+            leftmost = tuple(contour_to_use[contour_to_use[:, :, 0].argmin()][0])
+            rightmost = tuple(contour_to_use[contour_to_use[:, :, 0].argmax()][0])
+            topmost = tuple(contour_to_use[contour_to_use[:, :, 1].argmin()][0])
+            bottommost = tuple(contour_to_use[contour_to_use[:, :, 1].argmax()][0])
 
-            if cv2.contourArea(cnt) < 200:
+            # Draw circles on each extreme point.
+            cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
 
-                # Get the extreme points.
-                leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
-                rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
-                topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
-                bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
+            # Optionally, draw lines connecting these points.
+            cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
 
-                # Draw circles on each extreme point.
-                cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
-                cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
-                cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
-                cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
-
-                # Optionally, draw lines connecting the extreme points.
-                cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
-                cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
-                cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
-                cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
-
-        # Use this processed image with extreme points for display.
+        # Use this processed image for display.
         display_crop = thresh_crop_color
         break
 
