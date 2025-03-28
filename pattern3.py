@@ -70,6 +70,7 @@ picam2.start()
 time.sleep(2)
 
 cropped_contours = []
+thresholded_images = []
 
 while True:
     # Capture original frame
@@ -134,8 +135,17 @@ while True:
         cropped_exact = cv2.bitwise_and(cropped_frame, cropped_frame, mask=cropped_mask)
         cropped_contours.append(cropped_exact)
 
-        for idx, crop in enumerate(cropped_contours):
-            cv2.imshow(f"Cropped {idx}", crop)
+        # Further process: convert to grayscale and apply threshold.
+        gray_crop = cv2.cvtColor(cropped_exact, cv2.COLOR_BGR2GRAY)
+        # Using Otsu's method to determine threshold value automatically.
+        ret, thresh_crop = cv2.threshold(
+            gray_crop, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
+        thresholded_images.append(thresh_crop)
+
+        # Display each thresholded image in separate windows.
+        for idx, thresh_img in enumerate(thresholded_images):
+            cv2.imshow(f"Thresholded {idx}", thresh_img)
 
     # Display
     cv2.imshow("Detected Shapes", frame)
