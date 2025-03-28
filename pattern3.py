@@ -143,10 +143,6 @@ while True:
         )
         thresholded_images.append(thresh_crop)
 
-        # Display each thresholded image in separate windows.
-        for idx, thresh_img in enumerate(thresholded_images):
-            cv2.imshow(f"Thresholded {idx}", thresh_img)
-
     if thresh_crop is not None:
         cv2.imshow("Thresholded Crops", thresh_crop)
     else:
