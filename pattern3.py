@@ -80,9 +80,14 @@ while True:
     )
     thresh = cv2.erode(thresh, None, iterations=2)
     thresh = cv2.dilate(thresh, None, iterations=2)
+    inv_thresh = ~thresh
 
     # Find contours.
     contours, hierarchy = cv2.findContours(
+        thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    inv_contours, inv_hierarchy = cv2.findContours(
         thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
@@ -114,10 +119,41 @@ while True:
             (255, 0, 0),
             2,
         )
+    for contour in inv_contours:  # check inverse of binary image
+        if (
+            cv2.contourArea(inv_contours) > 300
+        ):  # skip if the contour is too big (removes background)
+            continue
+
+        shape_name, approx = detect_shape(inv_contours)
+        label = shape_name
+
+        if shape_name == "arrow":
+            direction = get_arrow_direction(inv_contours)
+            label += " (" + direction + ")"
+
+        M = cv2.moments(inv_contours)
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+        else:
+            cX, cY = 0, 0
+
+        cv2.drawContours(frame, [approx], -1, (0, 255, 0), 2)
+        cv2.putText(
+            frame,
+            label,
+            (cX - 50, cY),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 0, 0),
+            2,
+        )
 
     # Display
     cv2.imshow("Detected Shapes", frame)
     cv2.imshow("thresholding", thresh)
+    cv2.imshow("iverted thresh", inv_thresh)
 
     # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord("q"):
