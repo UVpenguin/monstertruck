@@ -155,23 +155,26 @@ while True:
         # For each contour in the cropped image, get the 4 extreme points and draw them.
         for cnt in crop_contours:
             print(cv2.contourArea(cnt))
-            # Get the extreme points.
-            leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
-            rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
-            topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
-            bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
 
-            # Draw circles on each extreme point.
-            cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
-            cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
-            cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
-            cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
+            if cv2.contourArea(cnt) < 200:
 
-            # Optionally, draw lines connecting the extreme points.
-            cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
-            cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
-            cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
-            cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
+                # Get the extreme points.
+                leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
+                rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
+                topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
+                bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
+
+                # Draw circles on each extreme point.
+                cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
+                cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
+                cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
+                cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
+
+                # Optionally, draw lines connecting the extreme points.
+                cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
+                cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
+                cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
+                cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
 
         # Use this processed image with extreme points for display.
         display_crop = thresh_crop_color
