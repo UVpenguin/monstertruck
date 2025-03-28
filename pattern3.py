@@ -143,8 +143,21 @@ while True:
         )
         thresholded_images.append(thresh_crop)
 
+        # Detect contours in the thresholded cropped image.
+        crop_contours, crop_hierarchy = cv2.findContours(
+            thresh_crop.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        # Convert threshold image to color so contours can be drawn in color.
+        thresh_crop_color = cv2.cvtColor(thresh_crop, cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(thresh_crop_color, crop_contours, -1, (0, 255, 0), 2)
+
+        # Update the display crop with this processed image.
+        display_crop = thresh_crop_color
+        # Use the first valid crop per frame
+        break
+
     if thresh_crop is not None:
-        cv2.imshow("Thresholded Crops", thresh_crop)
+        cv2.imshow("Thresholded Crops", display_crop)
     else:
         # Show a blank image if no crop is available.
         cv2.imshow("Thresholded Crops", np.zeros((100, 100), dtype=np.uint8))
