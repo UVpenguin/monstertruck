@@ -147,6 +147,12 @@ while True:
         for idx, thresh_img in enumerate(thresholded_images):
             cv2.imshow(f"Thresholded {idx}", thresh_img)
 
+    if thresh_crop is not None:
+        cv2.imshow("Thresholded Crops", thresh_crop)
+    else:
+        # Show a blank image if no crop is available.
+        cv2.imshow("Thresholded Crops", np.zeros((100, 100), dtype=np.uint8))
+
     # Display
     cv2.imshow("Detected Shapes", frame)
     cv2.imshow("thresholding", thresh)
