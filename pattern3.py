@@ -124,6 +124,31 @@ while True:
         mask = np.zeros_like(gray)
         cv2.drawContours(mask, [contour], -1, 255, -1)
 
+        # Compute the average color of the shape using the mask.
+        avg_color = cv2.mean(frame, mask=mask)[:3]
+        avg_color_int = tuple(map(int, avg_color))
+
+        # Annotate the original frame with the shape name and its average color.
+        cv2.drawContours(frame, [approx], -1, (0, 255, 0), 2)
+        cv2.putText(
+            frame,
+            f"{label}",
+            (cX - 50, cY),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 0, 0),
+            2,
+        )
+        cv2.putText(
+            frame,
+            f"Color: {avg_color_int}",
+            (cX - 50, cY - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 255),
+            2,
+        )
+
         # Get bounding rectangle of the contour.
         x, y, w, h = cv2.boundingRect(contour)
 
