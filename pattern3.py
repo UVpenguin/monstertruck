@@ -147,12 +147,15 @@ while True:
         crop_contours, crop_hierarchy = cv2.findContours(
             thresh_crop.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
+
         # Convert threshold image to color so contours can be drawn in color.
         thresh_crop_color = cv2.cvtColor(thresh_crop, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(thresh_crop_color, crop_contours, -1, (0, 255, 0), 2)
 
         # For each contour in the cropped image, get the 4 extreme points and draw them.
         for cnt in crop_contours:
+            if cv2.contourArea(cnt) > 200:  # skip if the contour is too big
+                continue
             # Get the extreme points.
             leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
             rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
