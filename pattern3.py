@@ -119,9 +119,20 @@ while True:
             2,
         )
 
+        # Create a mask for the contour.
+        mask = np.zeros_like(gray)
+        cv2.drawContours(mask, [contour], -1, 255, -1)
+
+        # Get bounding rectangle of the contour.
         x, y, w, h = cv2.boundingRect(contour)
-        cropped_box = frame[y : y + h, x : x + w]
-        cropped_contours.append(cropped_box)
+
+        # Crop both the frame and mask to the bounding rectangle.
+        cropped_frame = frame[y : y + h, x : x + w]
+        cropped_mask = mask[y : y + h, x : x + w]
+
+        # Apply the mask to the cropped frame.
+        cropped_exact = cv2.bitwise_and(cropped_frame, cropped_frame, mask=cropped_mask)
+        cropped_contours.append(cropped_exact)
 
         for idx, crop in enumerate(cropped_contours):
             cv2.imshow(f"Cropped {idx}", crop)
