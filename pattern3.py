@@ -59,87 +59,81 @@ def detect_shapes(image):
 
 
 def detect_arrow(image):
-    """
-    Improved arrow detection with precise direction identification
-
-    Returns:
-    - False if no arrow detected
-    - Tuple (bool, str) where first element is arrow presence,
-      and second element is arrow direction
-    """
-    # Create a copy for drawing debug information
-    debug_image = image.copy()
-
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray, 50, 150)
-
-    # Safely display edges
-    debug_edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=50, maxLineGap=10)
 
     if lines is None or len(lines) < 2:
-        # Display empty debug images if no lines found
-        cv2.imshow("Edges", debug_edges)
-        cv2.imshow("Lines", debug_image)
-        return (False, "")
+        return False, None  # No arrow detected
 
-    # Collect line information and draw debug lines
-    line_info = []
+    # Collect all endpoints
+    endpoints = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
+        endpoints.append((x1, y1))
+        endpoints.append((x2, y2))
 
-        # Draw lines on debug image
-        cv2.line(debug_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # Find the tip by clustering endpoints
+    tip = None
+    max_neighbors = 0
+    threshold_distance = 10  # pixels
 
-        # Calculate angle in degrees
-        angle_deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-        # Store line with leftmost point first to normalize direction
-        if x1 > x2:
-            x1, y1, x2, y2 = x2, y2, x1, y1
-        line_info.append((angle_deg, x1, y1, x2, y2))
+    for i, (x, y) in enumerate(endpoints):
+        neighbors = 0
+        for x2, y2 in endpoints:
+            if abs(x - x2) < threshold_distance and abs(y - y2) < threshold_distance:
+                neighbors += 1
+        if neighbors > max_neighbors:
+            max_neighbors = neighbors
+            tip = (x, y)
 
-    # Safely display debug images
-    cv2.imshow("Edges", debug_edges)
-    cv2.imshow("Lines", debug_image)
+    if tip is None:
+        return False, None
 
-    # Look for converging lines (arrowhead pattern)
-    arrowhead_found = False
-    direction = ""
+    # Find the longest line connected to the tip (shaft)
+    shaft_length = 0
+    shaft_base = None
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        # Check if line starts or ends near tip using Manhattan distance
+        start_near = (abs(x1 - tip[0]) + abs(y1 - tip[1])) < threshold_distance * 2
+        end_near = (abs(x2 - tip[0]) + abs(y2 - tip[1])) < threshold_distance * 2
 
-    # Check for arrowhead formation
-    for i in range(len(line_info)):
-        for j in range(i + 1, len(line_info)):
-            angle1, x1_1, y1_1, x2_1, y2_1 = line_info[i]
-            angle2, x1_2, y1_2, x2_2, y2_2 = line_info[j]
-
-            # Check if lines converge
-            angle_diff = np.abs(angle1 - angle2)
-            if angle_diff < 90:
-                arrowhead_found = True
-
-                # Determine arrow direction more precisely
-                # Vertical detection (Up/Down)
-                if abs(angle1) > 60 or abs(angle2) > 60:
-                    # Check if points are moving vertically
-                    if y2_1 < y1_1 and y2_2 < y1_2:
-                        direction = "UP"
-                    elif y2_1 > y1_1 and y2_2 > y1_2:
-                        direction = "DOWN"
-                # Horizontal detection (Left/Right)
+        if start_near or end_near:
+            length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            if length > shaft_length:
+                shaft_length = length
+                # Determine base coordinates
+                if start_near:
+                    shaft_base = (x2, y2)
                 else:
-                    # Check horizontal movement
-                    if x2_1 > x1_1 and x2_2 > x1_2:
-                        direction = "RIGHT"
-                    elif x2_1 < x1_1 and x2_2 < x1_2:
-                        direction = "LEFT"
+                    shaft_base = (x1, y1)
 
-                break
+    if shaft_base is None:
+        return False, None
 
-        if arrowhead_found:
-            break
+    # Determine direction based on vector from base to tip
+    dx = tip[0] - shaft_base[0]
+    dy = tip[1] - shaft_base[1]
 
-    return (arrowhead_found, direction)
+    if abs(dx) > abs(dy):  # Dominant horizontal movement
+        direction = "right" if dx > 0 else "left"
+    else:  # Dominant vertical movement
+        direction = "down" if dy > 0 else "up"
+
+    # Draw the detected arrow
+    cv2.arrowedLine(image, shaft_base, tip, (0, 255, 0), 3, tipLength=0.3)
+    cv2.putText(
+        image,
+        f"Arrow: {direction}",
+        (10, 60),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 0, 255),
+        2,
+    )
+
+    return True, direction
 
 
 def detect_color(image):
