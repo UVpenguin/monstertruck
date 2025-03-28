@@ -214,13 +214,13 @@ while True:
             # - Left: angle above 135 or below -135
             # - Down: angle between -135 and -45
             if -45 <= angle <= 45:
-                arrow_direction = "right"
-            elif 45 < angle <= 135:
-                arrow_direction = "up"
-            elif angle > 135 or angle < -135:
                 arrow_direction = "left"
-            elif -135 <= angle < -45:
+            elif 45 < angle <= 135:
                 arrow_direction = "down"
+            elif angle > 135 or angle < -135:
+                arrow_direction = "right"
+            elif -135 <= angle < -45:
+                arrow_direction = "up"
 
             # Annotate the processed crop with the computed direction.
             cv2.putText(
@@ -245,7 +245,6 @@ while True:
 
     # Display
     cv2.imshow("Detected Shapes", frame)
-    cv2.imshow("thresholding", thresh)
 
     # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord("q"):
