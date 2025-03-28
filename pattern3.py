@@ -121,18 +121,18 @@ while True:
         )
     for contour in inv_contours:  # check inverse of binary image
         if (
-            cv2.contourArea(inv_contours) > 300
+            cv2.contourArea(contour) > 300
         ):  # skip if the contour is too big (removes background)
             continue
 
-        shape_name, approx = detect_shape(inv_contours)
+        shape_name, approx = detect_shape(contour)
         label = shape_name
 
         if shape_name == "arrow":
-            direction = get_arrow_direction(inv_contours)
+            direction = get_arrow_direction(contour)
             label += " (" + direction + ")"
 
-        M = cv2.moments(inv_contours)
+        M = cv2.moments(contour)
         if M["m00"] != 0:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
