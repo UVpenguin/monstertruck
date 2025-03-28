@@ -154,8 +154,7 @@ while True:
 
         # For each contour in the cropped image, get the 4 extreme points and draw them.
         for cnt in crop_contours:
-            if cv2.contourArea(cnt) > 200:  # skip if the contour is too big
-                continue
+            print(cv2.contourArea(cnt))
             # Get the extreme points.
             leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
             rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
