@@ -62,6 +62,22 @@ def get_arrow_direction(contour):
     return direction
 
 
+def classify_color(avg_color):
+    """
+    Classifies the average color (B, G, R) as 'red', 'green', or 'blue'
+    based on the dominant channel.
+    """
+    b, g, r = avg_color
+    if r > g and r > b:
+        return "red"
+    elif g > r and g > b:
+        return "green"
+    elif b > r and b > g:
+        return "blue"
+    else:
+        return "undefined"
+
+
 # Initialize camera
 picam2 = Picamera2()
 preview_config = picam2.create_preview_configuration(main={"format": "BGR888"})
@@ -127,8 +143,9 @@ while True:
         # Compute the average color of the shape using the mask.
         avg_color = cv2.mean(frame, mask=mask)[:3]
         avg_color_int = tuple(map(int, avg_color))
+        color_name = classify_color(avg_color_int)
 
-        # Annotate the original frame with the shape name and its average color.
+        # Annotate the original frame with the shape name and its dominant color.
         cv2.drawContours(frame, [approx], -1, (0, 255, 0), 2)
         cv2.putText(
             frame,
@@ -141,7 +158,7 @@ while True:
         )
         cv2.putText(
             frame,
-            f"Color: {avg_color_int}",
+            f"Color: {color_name}",
             (cX - 50, cY - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
