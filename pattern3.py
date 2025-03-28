@@ -192,6 +192,28 @@ while True:
             thresh_crop.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
         )
 
+        # If the outer shape is a rectangle or square, and there are multiple inner contours,
+        # label it as a "complex symbol".
+        if label in ["rectangle", "square"] and crop_hierarchy is not None:
+            inner_count = 0
+            # The hierarchy array shape is (1, numContours, 4)
+            for hier in crop_hierarchy[0]:
+                # hier[3] != -1 indicates that this contour is an inner contour.
+                if hier[3] != -1:
+                    inner_count += 1
+            if inner_count > 1:
+                label = "complex symbol"
+                # Update the annotation on the main frame.
+                cv2.putText(
+                    frame,
+                    f"{label}",
+                    (cX - 50, cY),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 0, 255),
+                    2,
+                )
+
         contour_to_use = None
         if shape_name == "circle" and crop_hierarchy is not None:
             # Compute outer centroid relative to the cropped ROI.
