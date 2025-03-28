@@ -73,11 +73,6 @@ while True:
     # Capture original frame
     frame = picam2.capture_array()
 
-    ret, frame = picam2.read()
-    if not ret:
-        print("Failed to capture frame from camera")
-        break
-
     # Preprocessing: convert to grayscale, threshold and erode.
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     ret_val, thresh = cv2.threshold(
