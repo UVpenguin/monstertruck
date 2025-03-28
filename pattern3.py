@@ -88,7 +88,7 @@ while True:
     )
 
     inv_contours, inv_hierarchy = cv2.findContours(
-        thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        inv_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
     for contour in contours:
