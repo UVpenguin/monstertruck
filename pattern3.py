@@ -151,9 +151,28 @@ while True:
         thresh_crop_color = cv2.cvtColor(thresh_crop, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(thresh_crop_color, crop_contours, -1, (0, 255, 0), 2)
 
-        # Update the display crop with this processed image.
+        # For each contour in the cropped image, get the 4 extreme points and draw them.
+        for cnt in crop_contours:
+            # Get the extreme points.
+            leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
+            rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
+            topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
+            bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
+
+            # Draw circles on each extreme point.
+            cv2.circle(thresh_crop_color, leftmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, rightmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, topmost, 3, (0, 0, 255), -1)
+            cv2.circle(thresh_crop_color, bottommost, 3, (0, 0, 255), -1)
+
+            # Optionally, draw lines connecting the extreme points.
+            cv2.line(thresh_crop_color, leftmost, topmost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, topmost, rightmost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, rightmost, bottommost, (255, 0, 0), 1)
+            cv2.line(thresh_crop_color, bottommost, leftmost, (255, 0, 0), 1)
+
+        # Use this processed image with extreme points for display.
         display_crop = thresh_crop_color
-        # Use the first valid crop per frame
         break
 
     if thresh_crop is not None:
