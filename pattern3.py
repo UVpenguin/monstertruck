@@ -155,6 +155,8 @@ while True:
         # For each contour in the cropped image, get the 4 extreme points and draw them.
         for cnt in crop_contours:
             print(cv2.contourArea(cnt))
+            if cv2.contourArea(cnt) < 100:
+                continue
 
             if cv2.contourArea(cnt) < 200:
 
