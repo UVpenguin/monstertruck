@@ -114,14 +114,13 @@ def adjust_motors(avg_angle, tolerance=45):
 #             sleep(0.1)
 
 
-def color_percentage(hsv, mask):
+def color_percentage(hsv, color_mask):
     height, width, _ = hsv.shape
-
-    non_black_pixels = hsv[np.where(np.any(hsv != [0, 0, 0], axis=2))]
-    num_non_black = non_black_pixels.shape[0] * non_black_pixels.shape[1]
-
     total_pixels = height * width
-    fraction = num_non_black / total_pixels
+
+    num_color_pixels = np.count_nonzero(color_mask)
+
+    fraction = num_color_pixels / total_pixels
     print(f"That's {fraction:.2%} of all pixels.")
 
 
