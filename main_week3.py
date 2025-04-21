@@ -122,7 +122,7 @@ def color_masking(frame):
 
     # mask of red
     red_mask = cv.inRange(hsv, (0, 80, 80), (30, 255, 255))
-    red = cv.bitwise_and(frame, mask=red_mask)
+    red = cv.bitwise_and(frame, frame, mask=red_mask)
 
     cv.imshow("Red", red)
     cv.imshow("Green", green)
