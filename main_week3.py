@@ -136,6 +136,7 @@ def main():
         while True:
             frame = picam2.capture_array()
             binary_img = preprocess(frame)
+            color_masking(frame)
             # angle = detect_line_direction(binary_img, sample_offset=50)
 
             # if angle is not None:
