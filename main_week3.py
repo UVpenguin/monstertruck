@@ -167,6 +167,9 @@ def color_masking_inserter(frame):
         FRAME_OVERRIDE = True
         binary_img = preprocess(blue)
         frame = blue
+    else:
+        FRAME_OVERRIDE = False
+        
 
     # if yellow_color_percentage > 0.15:
     #     FRAME_OVERRIDE = True
