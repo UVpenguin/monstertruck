@@ -147,7 +147,7 @@ def color_masking(frame):
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     # blue_color_percentage = color_percentage(blue, blue_mask)
 
-    black_mask = cv.inRange(frame, (0, 0, 0), (180, 255, 30))
+    black_mask = cv.inRange(frame, (0, 0, 0), (0, 255, 255))
     black = cv.bitwise_and(frame, frame, mask=black_mask)
     black_color_percentage = color_percentage(black, black_mask)
 
