@@ -161,11 +161,11 @@ def color_mask_override(frame):
         return red
     if green_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        cv.imshow("Green", green)
         return green
     if blue_color_percentage > 0.15:
         FRAME_OVERRIDE = True
         frame = blue
+        cv.imshow("Blue", blue)
         return blue
     else:
         FRAME_OVERRIDE = False
