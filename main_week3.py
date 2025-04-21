@@ -129,22 +129,25 @@ def color_percentage(hsv, color_mask):
 
 def color_masking_inserter(frame):
     global FRAME_OVERRIDE
+    global binary_img
+
+    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    green_mask = cv.inRange(frame, (36, 50, 50), (70, 255, 255))
+    green_mask = cv.inRange(hsv, (36, 50, 50), (70, 255, 255))
     green = cv.bitwise_and(frame, frame, mask=green_mask)
     green_color_percentage = color_percentage(green, green_mask)
 
     # mask of red
     # camera detects blue as red
-    red_mask = cv.inRange(frame, (0, 50, 50), (30, 255, 255))
+    red_mask = cv.inRange(hsv, (0, 50, 50), (30, 255, 255))
     red = cv.bitwise_and(frame, frame, mask=red_mask)
     red_color_percentage = color_percentage(red, red_mask)
 
     # mask of blue
     # blue is actually red
     # TODO fix blue mask
-    blue_mask = cv.inRange(frame, (100, 150, 0), (140, 255, 255))
+    blue_mask = cv.inRange(hsv, (100, 150, 0), (140, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     blue_color_percentage = color_percentage(blue, blue_mask)
 
@@ -156,13 +159,15 @@ def color_masking_inserter(frame):
 
     if red_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        frame = red
+        binary_img = preprocess(red)
     if green_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        frame = green
+        binary_img = preprocess(green)
     if blue_color_percentage > 0.15:
         FRAME_OVERRIDE = True
+        binary_img = preprocess(blue)
         frame = blue
+
     # if yellow_color_percentage > 0.15:
     #     FRAME_OVERRIDE = True
     #     frame = yellow
@@ -181,13 +186,11 @@ def main():
         while True:
 
             frame = picam2.capture_array()
-            hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
             if not FRAME_OVERRIDE:
                 binary_img = preprocess(frame)
-            else:
-                binary_img = preprocess(hsv)
-            color_masking_inserter(hsv)
+
+            color_masking_inserter(frame)
             # angle = detect_line_direction(binary_img, sample_offset=50)
 
             # if angle is not None:
