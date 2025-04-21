@@ -136,19 +136,19 @@ def main():
         while True:
             frame = picam2.capture_array()
             binary_img = preprocess(frame)
-            angle = detect_line_direction(binary_img, sample_offset=50)
+            # angle = detect_line_direction(binary_img, sample_offset=50)
 
-            if angle is not None:
-                # Line detected: disable sweeping so servo stays centered.
-                if sweeping_enabled.is_set():
-                    print("Line detected, stopping servo sweep.")
-                    sweeping_enabled.clear()
-                adjust_motors(angle)
-            else:
-                stop()
-                print("No line detected, enabling servo sweep.")
-                if not sweeping_enabled.is_set():
-                    sweeping_enabled.set()
+            # if angle is not None:
+            #     # Line detected: disable sweeping so servo stays centered.
+            #     if sweeping_enabled.is_set():
+            #         print("Line detected, stopping servo sweep.")
+            #         sweeping_enabled.clear()
+            #     adjust_motors(angle)
+            # else:
+            #     stop()
+            #     print("No line detected, enabling servo sweep.")
+            #     if not sweeping_enabled.is_set():
+            #         sweeping_enabled.set()
 
             cv.imshow("Binary Image", binary_img)
             if cv.waitKey(1) & 0xFF == ord("q"):
