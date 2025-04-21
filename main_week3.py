@@ -117,17 +117,17 @@ def color_masking(frame):
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    green_mask = cv.inRange(hsv, (36, 80, 80), (70, 255, 255))
+    green_mask = cv.inRange(hsv, (36, 50, 50), (70, 255, 255))
     green = cv.bitwise_and(frame, frame, mask=green_mask)
 
     # mask of red
     # camera detects blue as red
-    red_mask = cv.inRange(hsv, (0, 80, 80), (30, 255, 255))
+    red_mask = cv.inRange(hsv, (0, 50, 50), (30, 255, 255))
     red = cv.bitwise_and(frame, frame, mask=red_mask)
     
     #mask of blue
     # blue is actually red
-    blue_mask = cv.inRange(hsv, (250, 80, 80), (255, 255, 255))
+    blue_mask = cv.inRange(hsv, (240, 50, 50), (255, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
 
     cv.imshow("Blue", red)
