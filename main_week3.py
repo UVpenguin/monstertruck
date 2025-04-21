@@ -124,7 +124,6 @@ def color_percentage(hsv, color_mask):
     num_color_pixels = np.count_nonzero(color_mask)
 
     fraction = num_color_pixels / total_pixels
-    print(f"That's {fraction:.2%} of all pixels.")
     return fraction
 
 
@@ -148,6 +147,10 @@ def color_masking_inserter(frame):
     blue_mask = cv.inRange(frame, (100, 150, 0), (140, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     blue_color_percentage = color_percentage(blue, blue_mask)
+
+    print(
+        f"Red: {red_color_percentage:.2f}, Green: {green_color_percentage:.2f}, Blue: {blue_color_percentage:.2f}"
+    )
 
     # TODO make a yellow mask
 
