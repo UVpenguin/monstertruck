@@ -117,7 +117,7 @@ def color_masking(frame):
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    mask = cv.inRange(hsv, (36, 25, 25), (70, 255, 255))
+    mask = cv.inRange(hsv, (36, 50, 50), (70, 255, 255))
     green = cv.bitwise_and(frame, frame, mask=mask)
 
     cv.imshow("Green", green)
