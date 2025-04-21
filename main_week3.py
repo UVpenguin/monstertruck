@@ -122,6 +122,7 @@ def color_percentage(hsv, color_mask):
     num_color_pixels = np.count_nonzero(color_mask)
 
     fraction = num_color_pixels / total_pixels
+    print(f"That's {fraction:.2%} of all pixels.")
     return fraction
 
 
@@ -142,7 +143,7 @@ def color_masking(frame):
     # mask of blue
     # blue is actually red
     # TODO fix blue mask
-    blue_mask = cv.inRange(hsv, (240, 50, 50), (255, 255, 255))
+    blue_mask = cv.inRange(hsv, (100, 150, 0), (140, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     # blue_color_percentage = color_percentage(blue, blue_mask)
 
@@ -151,6 +152,7 @@ def color_masking(frame):
     black_color_percentage = color_percentage(black, black_mask)
 
     cv.imshow("Black", black)
+    cv.imshow("Blue", blue)
 
 
 def main():
