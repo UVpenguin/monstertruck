@@ -34,11 +34,11 @@ pwmB = GPIO.PWM(enB, 1000)
 pwmA.start(60)
 pwmB.start(60)
 
-# Servo Setup
-factory = PiGPIOFactory()
-servo = AngularServo(
-    "BOARD35", pin_factory=factory, min_pulse_width=0.0006, max_pulse_width=0.0023
-)
+# # Servo Setup
+# factory = PiGPIOFactory()
+# servo = AngularServo(
+#     "BOARD35", pin_factory=factory, min_pulse_width=0.0006, max_pulse_width=0.0023
+# )
 
 
 sweeping_enabled = threading.Event()
@@ -92,25 +92,25 @@ def adjust_motors(avg_angle, tolerance=45):
         right()
 
 
-def servo_control():
-    min_angle, max_angle = -65, 65
-    step = 10
-    delay = 0.2  # delay between steps while sweeping
-    current_angle = min_angle
-    direction = step
+# def servo_control():
+#     min_angle, max_angle = -65, 65
+#     step = 10
+#     delay = 0.2  # delay between steps while sweeping
+#     current_angle = min_angle
+#     direction = step
 
-    while True:
-        if sweeping_enabled.is_set():
-            servo.angle = current_angle
-            sleep(delay)
-            current_angle += direction
-            if current_angle >= max_angle or current_angle <= min_angle:
-                direction *= -1  # reverse sweep direction
-        else:
-            # If not sweeping, ensure servo is centered.
-            if servo.angle != 0:
-                servo.angle = 0
-            sleep(0.1)
+#     while True:
+#         if sweeping_enabled.is_set():
+#             servo.angle = current_angle
+#             sleep(delay)
+#             current_angle += direction
+#             if current_angle >= max_angle or current_angle <= min_angle:
+#                 direction *= -1  # reverse sweep direction
+#         else:
+#             # If not sweeping, ensure servo is centered.
+#             if servo.angle != 0:
+#                 servo.angle = 0
+#             sleep(0.1)
 
 
 def color_masking(frame):
@@ -124,8 +124,8 @@ def color_masking(frame):
 
 
 def main():
-    servo_thread = threading.Thread(target=servo_control, daemon=True)
-    servo_thread.start()
+    # servo_thread = threading.Thread(target=servo_control, daemon=True)
+    # servo_thread.start()
 
     picam2 = Picamera2()
     picam2.configure(picam2.create_preview_configuration())
