@@ -127,9 +127,8 @@ def color_percentage(hsv, color_mask):
     return fraction
 
 
-def color_masking_inserter(frame):
+def color_mask_override(frame):
     global FRAME_OVERRIDE
-    global binary_img
 
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
@@ -159,21 +158,19 @@ def color_masking_inserter(frame):
 
     if red_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        binary_img = preprocess(red)
+        return red
     if green_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        binary_img = preprocess(green)
+        return green
     if blue_color_percentage > 0.15:
         FRAME_OVERRIDE = True
-        binary_img = preprocess(blue)
         frame = blue
+        return blue
     else:
         FRAME_OVERRIDE = False
-        
 
     # if yellow_color_percentage > 0.15:
     #     FRAME_OVERRIDE = True
-    #     frame = yellow
 
 
 def main():
@@ -189,11 +186,11 @@ def main():
         while True:
 
             frame = picam2.capture_array()
-
+            override = color_mask_override(frame)
             if not FRAME_OVERRIDE:
                 binary_img = preprocess(frame)
-
-            color_masking_inserter(frame)
+            else:
+                binary_img = preprocess(override)
             # angle = detect_line_direction(binary_img, sample_offset=50)
 
             # if angle is not None:
