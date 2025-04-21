@@ -154,16 +154,16 @@ def color_masking_inserter(frame):
 
     # TODO make a yellow mask
 
-    if red_color_percentage > 15:
+    if red_color_percentage > 0.15:
         FRAME_OVERRIDE = True
         frame = red
-    if green_color_percentage > 15:
+    if green_color_percentage > 0.15:
         FRAME_OVERRIDE = True
         frame = green
-    if blue_color_percentage > 15:
+    if blue_color_percentage > 0.15:
         FRAME_OVERRIDE = True
         frame = blue
-    # if yellow_color_percentage > 15:
+    # if yellow_color_percentage > 0.15:
     #     FRAME_OVERRIDE = True
     #     frame = yellow
 
