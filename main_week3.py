@@ -115,7 +115,7 @@ def adjust_motors(avg_angle, tolerance=45):
 
 
 def color_percentage(hsv, mask):
-    height, width = hsv.shape
+    height, width, _ = hsv.shape
 
     non_black_pixels = hsv[np.where(np.any(hsv != [0, 0, 0], axis=2))]
     num_non_black = non_black_pixels.shape[0] * non_black_pixels.shape[1]
