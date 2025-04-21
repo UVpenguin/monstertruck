@@ -51,6 +51,7 @@ def preprocess(frame):
     return binary
 
 
+#
 def detect_line_direction(binary_img, sample_offset=50, pixel_threshold=128):
     height, width = binary_img.shape
     sample_row = height - sample_offset
@@ -113,20 +114,33 @@ def adjust_motors(avg_angle, tolerance=45):
 #             sleep(0.1)
 
 
+def color_percentage(hsv, mask):
+    height, width = hsv.shape
+
+    non_black_pixels = hsv[np.where(np.any(hsv != [0, 0, 0], axis=2))]
+    num_non_black = non_black_pixels.shape[0] * non_black_pixels.shape[1]
+
+    total_pixels = height * width
+    fraction = num_non_black / total_pixels
+    print(f"That's {fraction:.2%} of all pixels.")
+
+
 def color_masking(frame):
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
     # mask of green (36,25,25) ~ (86, 255,255)
     green_mask = cv.inRange(hsv, (36, 50, 50), (70, 255, 255))
     green = cv.bitwise_and(frame, frame, mask=green_mask)
+    color_percentage(green, green_mask)
 
     # mask of red
     # camera detects blue as red
     red_mask = cv.inRange(hsv, (0, 50, 50), (30, 255, 255))
     red = cv.bitwise_and(frame, frame, mask=red_mask)
-    
-    #mask of blue
+
+    # mask of blue
     # blue is actually red
+    # TODO fix blue mask
     blue_mask = cv.inRange(hsv, (240, 50, 50), (255, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
 
