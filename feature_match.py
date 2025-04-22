@@ -4,7 +4,7 @@ import numpy as np
 import utility
 
 # load templates once
-tmpl_kps, tmpl_des, tmpl_sizes, names = utility.loadTemplates()
+images, tmpl_kps, tmpl_des, tmpl_sizes, names = utility.loadTemplates()
 
 # configure PiCamera2
 picam2 = Picamera2()
