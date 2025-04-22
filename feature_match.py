@@ -61,7 +61,7 @@ def classify_color(avg_color):
 # Initialize camera
 picam2 = Picamera2()
 preview_config = picam2.createconfig = picam2.create_preview_configuration(
-    main={"format": "RGB888", "size": (640, 480)}
+    main={"format": "RGB888", "size": (440, 480)}
 )
 picam2.configure(preview_config)
 picam2.start()
