@@ -74,7 +74,7 @@ while True:
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(blur, 80, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     thresh = cv2.morphologyEx(
         thresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8), iterations=2
     )
@@ -103,11 +103,11 @@ while True:
         for j in child_idx:
             inner = contours[j]
             inner_area = cv2.contourArea(inner)
-            if inner_area < 100:
+            if inner_area < 50:
                 continue
 
             shape, approx_inner = detect_shape(inner)
-            if shape == "arrow":
+            if shape:
                 # we found an arrow inside!
                 # compute its direction via your 4‑extreme‑points
                 pts = approx_inner.reshape(-1, 2)
