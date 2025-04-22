@@ -49,7 +49,7 @@ try:
                 )
                 if cnts:
                     cnt = max(cnts, key=cv2.contourArea)
-                    
+
                     # compute moments
                     M_cnt = cv2.moments(cnt)
                     area = M_cnt["m00"]
@@ -63,12 +63,6 @@ try:
                         cx = x1 + (x2 - x1) // 2
                         cy = y1 + (y2 - y1) // 2
 
-                    dx = tip_pt[0] - cx
-                    dy = tip_pt[1] - cy
-                    if abs(dx) > abs(dy):
-                        label = "right arrow" if dx > 0 else "left arrow"
-                    else:
-                        label = "down arrow"  if dy > 0 else "up arrow"
                     # approximate polygon to find the tip
                     peri = cv2.arcLength(cnt, True)
                     approx = cv2.approxPolyDP(cnt, 0.03 * peri, True)
@@ -101,7 +95,6 @@ try:
                         cy = int(M_cnt["m01"] / M_cnt["m00"])
                         dx = tip_pt[0] - cx
                         dy = tip_pt[1] - cy
-                        # decide direction
                         if abs(dx) > abs(dy):
                             label = "right arrow" if dx > 0 else "left arrow"
                         else:
