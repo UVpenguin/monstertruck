@@ -112,7 +112,7 @@ while True:
 
     # Find first significant contour
     for i, cnt in enumerate(contours):
-        if cv2.contourArea(cnt) < 1000:
+        if cv2.contourArea(cnt) < 1000 and cv2.contourArea(cnt) > 3000:
             continue
 
         # Detect shape & color
