@@ -102,11 +102,13 @@ def preprocess(frame):
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+    v = cv2.GaussianBlur(hsv[:, :, 2], (5, 5), 0)
+
     # white mask
     white_mask = cv2.inRange(hsv, (0, 0, 100), (0, 255, 255))
-    white = cv2.bitwise_not(hsv, hsv, mask=white_mask)
+    v_masked = cv2.bitwise_and(v, v, mask=cv2.bitwise_not(white_mask))
 
-    _, thresh = cv2.threshold(white, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(v_masked, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # Cleanup Edges
     thresh = cv2.morphologyEx(
