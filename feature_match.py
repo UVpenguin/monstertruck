@@ -4,7 +4,7 @@ import numpy as np
 import utility
 
 # load templates once
-tmpl_kps, tmpl_des, tmpl_sizes, names, *_ = utility.loadTemplates()
+_, tmpl_kps, tmpl_des, tmpl_sizes, tmpl_names = utility.loadTemplates()
 
 # configure PiCamera2
 picam2 = Picamera2()
@@ -21,7 +21,7 @@ try:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # pass in the sizes list as well
         label, scene_pts = utility.findMatch(
-            gray, tmpl_kps, tmpl_des, tmpl_sizes, names
+            gray, tmpl_kps, tmpl_des, tmpl_sizes, tmpl_names
         )
         if not label:
             label = "No Match"

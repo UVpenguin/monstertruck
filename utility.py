@@ -92,7 +92,7 @@ def findMatch(
             continue
 
         # match descriptors
-        raw = bf.knnMatch(scene_des, templ_des, k=2)
+        raw = bf.knnMatch(scene_des, templ_des, 2)
         good = []
         for pair in raw:
             if len(pair) < 2:
