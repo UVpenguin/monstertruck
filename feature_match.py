@@ -109,9 +109,9 @@ def preprocess(frame):
         blur,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV,
-        blockSize=15,  # try 11,15,21...
-        C=4,  # tune from 2–10
+        cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU,
+        blockSize=0,  # try 11,15,21...
+        C=10,  # tune from 2–10
     )
 
     thresh = cv2.morphologyEx(
