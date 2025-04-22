@@ -28,22 +28,29 @@ def findMatch(gray_frame, descriptors, names, thresh=5):
 
     kps, des = orb.detectAndCompute(gray, None)
     if des is None:
-        return ""  # no features
+        return ""
 
+    # use Hamming distance (ORB descriptors are binary)
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
     scores = []
+
     for templ_des in descriptors:
         if templ_des is None:
             scores.append(0)
             continue
 
-        # knn + ratio test
-        matches = bf.knnMatch(des, templ_des, k=2)
-        good = [m for m, n in matches if m.distance < 0.75 * n.distance]
+        # knnMatch → list of lists, each inner list may have 1 or 2 DMatch objects
+        raw_matches = bf.knnMatch(des, templ_des, k=2)
+        good = []
+        for pair in raw_matches:
+            if len(pair) < 2:
+                continue
+            m, n = pair
+            if m.distance < 0.75 * n.distance:
+                good.append(m)
         scores.append(len(good))
 
-    # pick best
-    best = max(scores)
+    best = max(scores, default=0)
     if best > thresh:
         return names[scores.index(best)]
     return ""
