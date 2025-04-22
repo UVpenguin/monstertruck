@@ -129,7 +129,7 @@ while True:
     frame = picam2.capture_array()
     if frame is None:
         continue
-    elif x != 0 and y != 0 and h != 0 and w != 0:
+    elif h > 0 and w > 0:
         frame = frame[
             y : y + h, x : x + w
         ]  # crops the frame based on last frame's bounding rectangle
@@ -152,6 +152,9 @@ while True:
 
         # 1) detect the outer shape
         outer_label, outer_poly = detect_shape(cnt)
+
+        # Find the bounding rectangle of the outer contour for frame cropping
+        x, y, w, h = cv2.boundingRect(cnt)
 
         # 2) now look for arrow *inside* this outer contour
         found_arrow = False
@@ -211,9 +214,6 @@ while True:
             (255, 0, 0),
             1,
         )
-
-        # Find the bounding rectangle of the outer contour for frame cropping
-        x, y, w, h = cv2.boundingRect(cnt)
 
         break  # only first shape per frame
 
