@@ -145,7 +145,6 @@ def color_mask_override(frame):
 
     # mask of blue
     # blue is actually red
-    # TODO fix blue mask
     blue_mask = cv.inRange(hsv, (100, 150, 0), (140, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     blue_color_percentage = color_percentage(blue, blue_mask)
