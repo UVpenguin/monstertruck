@@ -18,7 +18,8 @@ template_files = [
     "green hexagon.jpg",
     "green semi-circle.jpg",
     "red circle.jpg",
-    "red pentagon.jpg",  
+    "red pentagon.jpg",
+]
 templates = []
 for filename in template_files:
     path = os.path.join(template_dir, filename)
