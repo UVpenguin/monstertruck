@@ -60,7 +60,9 @@ def classify_color(avg_color):
 
 # Initialize camera
 picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration(main={"format": "BGR888"})
+preview_config = picam2.createconfig = picam2.create_preview_configuration(
+    main={"format": "RGB888", "size": (640, 480)}
+)
 picam2.configure(preview_config)
 picam2.start()
 time.sleep(2)
@@ -72,7 +74,7 @@ while True:
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     thresh = cv2.morphologyEx(
         thresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8), iterations=2
     )
