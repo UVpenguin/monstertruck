@@ -63,6 +63,10 @@ while True:
     else:
         gray_frame = frame
 
+    if gray_frame is None or gray_frame.size == 0:
+        print("Warning: Skipping empty frame.")
+        continue
+
     # Detect ORB keypoints and descriptors in the current frame
     kp_frame, des_frame = orb.detectAndCompute(gray_frame, None)
     if des_frame is None:
