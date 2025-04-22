@@ -102,14 +102,11 @@ def preprocess(frame):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # 1) compute a smooth background
-    bg = cv2.GaussianBlur(gray, (51, 51), 0)
-
-    # 2) normalize the image by dividing by that background
-    norm = cv2.divide(gray, bg, scale=255)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
     # you already have blur = cv2.GaussianBlur(gray, ...)
     thresh = cv2.adaptiveThreshold(
-        norm,
+        blur,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV,
