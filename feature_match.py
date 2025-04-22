@@ -195,7 +195,7 @@ while True:
         )
 
         # annotate color
-        mask = np.zeros_like(gray)
+        mask = np.zeros_like(processed_frame)
         cv2.drawContours(mask, [cnt], -1, 255, -1)
         avg = cv2.mean(frame, mask=mask)[:3]
         color = classify_color(tuple(map(int, avg)))
