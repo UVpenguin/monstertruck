@@ -58,6 +58,25 @@ def classify_color(avg_color):
         return "undefined"
 
 
+def get_arrow_direction(contour):
+    """
+    Determines the rough orientation of an arrow using a minimum area rectangle.
+    Returns a string indicating the direction ("up", "down", "left", or "right").
+    """
+    rect = cv2.minAreaRect(contour)
+    angle = rect[-1]
+
+    if angle < -45:
+        angle = 90 + angle
+
+    (w, h) = rect[1]
+    if w < h:
+        direction = "up" if angle < 45 else "down"
+    else:
+        direction = "right" if angle < 45 else "left"
+    return direction
+
+
 # Initialize camera
 picam2 = Picamera2()
 preview_config = picam2.createconfig = picam2.create_preview_configuration(
@@ -82,13 +101,15 @@ while True:
     contours, hierarchy = cv2.findContours(
         thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
+
     if hierarchy is None:
         continue
+
     hierarchy = hierarchy[0]
 
     for i, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
-        if area < 500:
+        if area < 500 and area < 50:
             continue
 
         # 1) detect the outer shape
@@ -108,33 +129,7 @@ while True:
 
             shape, approx_inner = detect_shape(inner)
             if shape:
-                # we found an arrow inside!
-                # compute its direction via your 4‑extreme‑points
-                pts = approx_inner.reshape(-1, 2)
-                leftmost = tuple(inner[inner[:, :, 0].argmin()][0])
-                rightmost = tuple(inner[inner[:, :, 0].argmax()][0])
-                topmost = tuple(inner[inner[:, :, 1].argmin()][0])
-                bottommost = tuple(inner[inner[:, :, 1].argmax()][0])
-
-                pts4 = np.array(
-                    [leftmost, rightmost, topmost, bottommost], dtype=np.float32
-                )
-                center = pts4.mean(axis=0)
-                dists = np.linalg.norm(pts4 - center, axis=1)
-                tip = pts4[np.argmax(dists)]
-
-                dx = tip[0] - center[0]
-                dy = center[1] - tip[1]
-                ang = np.degrees(np.arctan2(dy, dx))
-
-                if -45 <= ang <= 45:
-                    direction = "right"
-                elif 45 < ang <= 135:
-                    direction = "up"
-                elif ang > 135 or ang < -135:
-                    direction = "left"
-                else:
-                    direction = "down"
+                direction = get_arrow_direction(inner)
 
                 arrow_label = f"arrow ({direction})"
                 found_arrow = True
