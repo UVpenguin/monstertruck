@@ -12,14 +12,13 @@ template_files = [
     "blue circle down arrow.jpg",
     "blue circle up arrow.jpg",
     "blue rectangle.jpg",
-    "blue rectangle left arrow.jpg",  # circle with arrow cutout
+    "blue rectangle left arrow.jpg",
     "blue rectangle right arrow.jpg",
     "blue triangle.jpg",
     "green hexagon.jpg",
     "green semi-circle.jpg",
     "red circle.jpg",
-    "red pentagon.jpg",  # rectangle with arrow cutout
-]
+    "red pentagon.jpg",  
 templates = []
 for filename in template_files:
     path = os.path.join(template_dir, filename)
@@ -58,7 +57,11 @@ while True:
         break
 
     # Convert frame to grayscale for feature detection
+    if len(frame.shape) == 3:
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    else:
+    gray_frame = frame
+
 
     # Detect ORB keypoints and descriptors in the current frame
     kp_frame, des_frame = orb.detectAndCompute(gray_frame, None)
