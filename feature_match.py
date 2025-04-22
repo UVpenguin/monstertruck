@@ -1,13 +1,11 @@
-# feature_match.py
 import cv2
 from picamera2 import Picamera2  # type: ignore
 import utility
 
-# load once
-images, names = utility.readImages()
-descriptors = utility.getDescriptors(images)
+# load templates once
+templ_kps, templ_des, names = utility.loadTemplates()
 
-# camera setup
+# configure PiCamera2
 picam2 = Picamera2()
 cfg = picam2.create_preview_configuration(main={"format": "BGR888", "size": (640, 480)})
 picam2.configure(cfg)
@@ -20,8 +18,7 @@ try:
             continue
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        label = utility.findMatch(gray, descriptors, names)
-
+        label = utility.findMatch(gray, templ_kps, templ_des, names)
         if not label:
             label = "No Match"
 

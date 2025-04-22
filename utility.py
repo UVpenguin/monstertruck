@@ -1,10 +1,9 @@
-# utility.py
 import cv2
 import imutils
 import numpy as np
 import os
 
-# tuned ORB for low‑light & simple shapes
+# 1) Tuned ORB detector
 orb = cv2.ORB_create(
     nfeatures=1500,
     scaleFactor=1.1,
@@ -14,10 +13,10 @@ orb = cv2.ORB_create(
     scoreType=cv2.ORB_HARRIS_SCORE,
 )
 
-# Hamming matcher for ORB
+# 2) Hamming-distance BFMatcher
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
-# CLAHE for contrast boost
+# 3) CLAHE for contrast boost
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 
@@ -35,45 +34,51 @@ def readImages():
     return images, names
 
 
-def getDescriptors(images):
-    return [orb.detectAndCompute(img, None)[1] for img in images]
+def loadTemplates():
+    """Load template images and return their keypoints, descriptors, and names."""
+    images, names = readImages()
+    kps_list, des_list = [], []
+    for img in images:
+        kp, des = orb.detectAndCompute(img, None)
+        kps_list.append(kp)
+        des_list.append(des)
+    return kps_list, des_list, names
 
 
 def _preprocess(gray):
-    # 1) scale to template width
+    # 1) resize to template scale
     gray = imutils.resize(gray, width=400)
     # 2) boost local contrast
     gray = clahe.apply(gray)
-    # 3) mild blur to suppress noise
+    # 3) mild denoise
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
     return gray
 
 
 def findMatch(
-    gray_frame,
-    descriptors,
-    names,
-    min_inliers=4,  # require ≥4 RANSAC inliers
-    ratio=0.9,  # relaxed ratio test
-    ransac_thresh=5.0,
-):  # reprojection threshold
+    gray_frame, kps_list, des_list, names, min_inliers=4, ratio=0.9, ransac_thresh=5.0
+):
     """
-    Returns the name of the best‑matching template, or "" if none
-    have at least `min_inliers` geometrically consistent matches.
+    Return the best-matching template name, or "" if none.
+      - Requires at least `min_inliers` RANSAC inliers
+      - Uses relaxed ratio test `ratio`
+      - RANSAC reproj threshold `ransac_thresh`
     """
     gray = _preprocess(gray_frame)
-    kps, des = orb.detectAndCompute(gray, None)
-    if des is None or len(kps) < min_inliers:
-        return ""  # no chance
+    # detect on scene
+    scene_kp, scene_des = orb.detectAndCompute(gray, None)
+    if scene_des is None or len(scene_kp) < min_inliers:
+        return ""
 
     best_name, best_inliers = "", 0
 
-    for templ_des, tname in zip(descriptors, names):
+    # for each template
+    for templ_kp, templ_des, name in zip(kps_list, des_list, names):
         if templ_des is None:
             continue
 
-        # KNN + ratio test
-        raw = bf.knnMatch(des, templ_des, k=2)
+        # k-NN match + ratio test
+        raw = bf.knnMatch(scene_des, templ_des, k=2)
         good = []
         for pair in raw:
             if len(pair) < 2:
@@ -83,17 +88,13 @@ def findMatch(
                 good.append(m)
 
         if len(good) < min_inliers:
-            continue  # not enough matches to bother
+            continue
 
-        # build point arrays for homography
-        src_pts = np.float32(
-            [orb.detectAndCompute(gray, None)[0][m.queryIdx].pt for m in good]
-        ).reshape(-1, 1, 2)
-        dst_pts = np.float32(
-            [orb.detectAndCompute(gray, None)[0][m.trainIdx].pt for m in good]
-        ).reshape(-1, 1, 2)
+        # build points for homography
+        src_pts = np.float32([templ_kp[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        dst_pts = np.float32([scene_kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
 
-        # find homography & count inliers
+        # RANSAC homography
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, ransac_thresh)
         if mask is None:
             continue
@@ -101,6 +102,6 @@ def findMatch(
         inliers = int(mask.sum())
         if inliers > best_inliers:
             best_inliers = inliers
-            best_name = tname
+            best_name = name
 
     return best_name if best_inliers >= min_inliers else ""
