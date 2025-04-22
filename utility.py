@@ -1,9 +1,10 @@
+# utility.py
 import cv2
 import imutils
 import numpy as np
 import os
 
-# 1) Tuned ORB detector for low‑light, simple shapes
+# tuned ORB for low‑light & simple shapes
 orb = cv2.ORB_create(
     nfeatures=1500,
     scaleFactor=1.1,
@@ -13,10 +14,10 @@ orb = cv2.ORB_create(
     scoreType=cv2.ORB_HARRIS_SCORE,
 )
 
-# 2) Hamming‐distance BFMatcher (no crossCheck here, we’ll use ratio test)
+# Hamming matcher for ORB
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
-# 3) CLAHE (adaptive histogram equalization) for contrast boost
+# CLAHE for contrast boost
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 
@@ -24,51 +25,54 @@ def readImages():
     images, names = [], []
     base = os.path.join(os.getcwd(), "templates")
     for root, _, files in os.walk(base):
-        for file in files:
-            img = cv2.imread(os.path.join(root, file), cv2.IMREAD_GRAYSCALE)
+        for f in files:
+            img = cv2.imread(os.path.join(root, f), cv2.IMREAD_GRAYSCALE)
             if img is None:
                 continue
             img = imutils.resize(img, width=400)
             images.append(img)
-            names.append(os.path.splitext(file)[0])
+            names.append(os.path.splitext(f)[0])
     return images, names
 
 
 def getDescriptors(images):
-    descriptors = []
-    for img in images:
-        _, des = orb.detectAndCompute(img, None)
-        descriptors.append(des)
-    return descriptors
+    return [orb.detectAndCompute(img, None)[1] for img in images]
 
 
 def _preprocess(gray):
-    # resize to match template scale
+    # 1) scale to template width
     gray = imutils.resize(gray, width=400)
-    # boost local contrast
+    # 2) boost local contrast
     gray = clahe.apply(gray)
-    # mild denoising
+    # 3) mild blur to suppress noise
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
     return gray
 
 
-def findMatch(gray_frame, descriptors, names, thresh=4, ratio=0.9):
+def findMatch(
+    gray_frame,
+    descriptors,
+    names,
+    min_inliers=4,  # require ≥4 RANSAC inliers
+    ratio=0.9,  # relaxed ratio test
+    ransac_thresh=5.0,
+):  # reprojection threshold
     """
-    Returns the template name with the most good ORB matches, or "" if none pass thresh.
-      - thresh: minimum # of ratio‐test matches
-      - ratio: Lowe’s ratio test threshold (loosened for symmetric shapes)
+    Returns the name of the best‑matching template, or "" if none
+    have at least `min_inliers` geometrically consistent matches.
     """
     gray = _preprocess(gray_frame)
     kps, des = orb.detectAndCompute(gray, None)
-    if des is None or len(kps) < 4:
-        return ""
+    if des is None or len(kps) < min_inliers:
+        return ""  # no chance
 
-    best_score = 0
-    best_name = ""
-    for templ_des, name in zip(descriptors, names):
+    best_name, best_inliers = "", 0
+
+    for templ_des, tname in zip(descriptors, names):
         if templ_des is None:
             continue
 
+        # KNN + ratio test
         raw = bf.knnMatch(des, templ_des, k=2)
         good = []
         for pair in raw:
@@ -78,9 +82,25 @@ def findMatch(gray_frame, descriptors, names, thresh=4, ratio=0.9):
             if m.distance < ratio * n.distance:
                 good.append(m)
 
-        score = len(good)
-        if score > best_score:
-            best_score = score
-            best_name = name
+        if len(good) < min_inliers:
+            continue  # not enough matches to bother
 
-    return best_name if best_score > thresh else ""
+        # build point arrays for homography
+        src_pts = np.float32(
+            [orb.detectAndCompute(gray, None)[0][m.queryIdx].pt for m in good]
+        ).reshape(-1, 1, 2)
+        dst_pts = np.float32(
+            [orb.detectAndCompute(gray, None)[0][m.trainIdx].pt for m in good]
+        ).reshape(-1, 1, 2)
+
+        # find homography & count inliers
+        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, ransac_thresh)
+        if mask is None:
+            continue
+
+        inliers = int(mask.sum())
+        if inliers > best_inliers:
+            best_inliers = inliers
+            best_name = tname
+
+    return best_name if best_inliers >= min_inliers else ""

@@ -1,12 +1,13 @@
+# feature_match.py
 import cv2
 from picamera2 import Picamera2  # type: ignore
 import utility
 
-# load templates + descriptors once
+# load once
 images, names = utility.readImages()
 descriptors = utility.getDescriptors(images)
 
-# configure PiCamera2
+# camera setup
 picam2 = Picamera2()
 cfg = picam2.create_preview_configuration(main={"format": "BGR888", "size": (640, 480)})
 picam2.configure(cfg)
@@ -18,19 +19,18 @@ try:
         if frame is None or frame.size == 0:
             continue
 
-        # convert to gray and run matcher
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         label = utility.findMatch(gray, descriptors, names)
+
         if not label:
             label = "No Match"
 
-        # draw result
         cv2.putText(
             frame, label, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2
         )
         cv2.imshow("Detection", frame)
 
-        if cv2.waitKey(1) in (27, ord("q")):  # ESC or 'q'
+        if cv2.waitKey(1) in (27, ord("q")):
             break
 
 finally:
