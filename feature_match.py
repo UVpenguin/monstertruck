@@ -98,6 +98,24 @@ def get_arrow_direction(contour):
     return arrow_direction
 
 
+def preprocess(frame):
+
+    # 1) compute a smooth background
+    bg = cv2.GaussianBlur(gray, (51, 51), 0)
+
+    # 2) normalize the image by dividing by that background
+    norm = cv2.divide(gray, bg, scale=255)
+
+    # 3) (optional) boost local contrast
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    norm = clahe.apply(norm)
+
+    # 4) now threshold (Otsu or fixed)
+    _, thresh = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    return thresh
+
+
 # Initialize camera
 picam2 = Picamera2()
 preview_config = picam2.createconfig = picam2.create_preview_configuration(
@@ -112,15 +130,10 @@ while True:
     if frame is None:
         continue
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    thresh = cv2.morphologyEx(
-        thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=2
-    )
+    processed_frame = preprocess(frame)
 
     contours, hierarchy = cv2.findContours(
-        thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        processed_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
 
     if hierarchy is None:
@@ -197,7 +210,7 @@ while True:
 
         break  # only first shape per frame
 
-    cv2.imshow("Thresholded", thresh)
+    cv2.imshow("Thresholded", processed_frame)
     cv2.imshow("Detection", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
