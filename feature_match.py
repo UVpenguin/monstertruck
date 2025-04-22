@@ -3,6 +3,12 @@ import time
 import numpy as np
 from picamera2 import Picamera2  # type: ignore
 
+# Bounding rectangle coordinates
+y = 0
+x = 0
+w = 0
+h = 0
+
 
 def detect_shape(contour):
     """
@@ -123,6 +129,10 @@ while True:
     frame = picam2.capture_array()
     if frame is None:
         continue
+    elif x != 0 and y != 0 and h != 0 and w != 0:
+        frame = frame[
+            y : y + h, x : x + w
+        ]  # crops the frame based on last frame's bounding rectangle
 
     processed_frame = preprocess(frame)
 
@@ -201,6 +211,9 @@ while True:
             (255, 0, 0),
             1,
         )
+
+        # Find the bounding rectangle of the outer contour for frame cropping
+        x, y, w, h = cv2.boundingRect(cnt)
 
         break  # only first shape per frame
 
