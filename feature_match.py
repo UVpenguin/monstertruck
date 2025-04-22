@@ -110,7 +110,7 @@ def preprocess(frame):
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU,
-        blockSize=0,  # try 11,15,21...
+        blockSize=21,  # try 11,15,21...
         C=10,  # tune from 2–10
     )
 
