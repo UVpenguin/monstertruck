@@ -70,69 +70,85 @@ while True:
     if frame is None:
         continue
 
-    # 1) Threshold & clean up
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     thresh = cv2.morphologyEx(
         thresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8), iterations=2
     )
 
-    # 2) Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(
+        thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+    )
+    hierarchy = hierarchy[0]  # simplify indexing
 
-    for cnt in contours:
+    for i, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
-        if area < 500:  # skip tiny noise
+        if area < 500:
             continue
 
-        shape_name, approx = detect_shape(cnt)
-        label = shape_name
+        # 1) detect the outer shape
+        outer_label, outer_poly = detect_shape(cnt)
 
-        # compute centroid for labeling
-        M = cv2.moments(cnt)
+        # 2) now look for arrow *inside* this outer contour
+        found_arrow = False
+        arrow_label = None
+
+        # scan all child contours of this outer one
+        child_idx = [j for j, h in enumerate(hierarchy) if h[3] == i]
+        for j in child_idx:
+            inner = contours[j]
+            inner_area = cv2.contourArea(inner)
+            if inner_area < 100:
+                continue
+
+            shape, approx_inner = detect_shape(inner)
+            if shape == "arrow":
+                # we found an arrow inside!
+                # compute its direction via your 4‑extreme‑points
+                pts = approx_inner.reshape(-1, 2)
+                leftmost = tuple(inner[inner[:, :, 0].argmin()][0])
+                rightmost = tuple(inner[inner[:, :, 0].argmax()][0])
+                topmost = tuple(inner[inner[:, :, 1].argmin()][0])
+                bottommost = tuple(inner[inner[:, :, 1].argmax()][0])
+
+                pts4 = np.array(
+                    [leftmost, rightmost, topmost, bottommost], dtype=np.float32
+                )
+                center = pts4.mean(axis=0)
+                dists = np.linalg.norm(pts4 - center, axis=1)
+                tip = pts4[np.argmax(dists)]
+
+                dx = tip[0] - center[0]
+                dy = center[1] - tip[1]
+                ang = np.degrees(np.arctan2(dy, dx))
+
+                if -45 <= ang <= 45:
+                    direction = "right"
+                elif 45 < ang <= 135:
+                    direction = "up"
+                elif ang > 135 or ang < -135:
+                    direction = "left"
+                else:
+                    direction = "down"
+
+                arrow_label = f"arrow ({direction})"
+                found_arrow = True
+                break
+
+        # choose final label
+        label = arrow_label if found_arrow else outer_label
+
+        # draw contour (outer or inner) and label
+        poly = outer_poly if not found_arrow else approx_inner
+        cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
+
+        M = cv2.moments(cnt if not found_arrow else inner)
         if M["m00"] != 0:
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
         else:
             cX, cY = 0, 0
 
-        # --- YOUR FOUR‐EXTREME‐POINT ARROW DIRECTION METHOD ---
-        if shape_name == "arrow":
-            # get the four extreme points
-            leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
-            rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
-            topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
-            bottommost = tuple(cnt[cnt[:, :, 1].argmax()][0])
-
-            pts4 = np.array(
-                [leftmost, rightmost, topmost, bottommost], dtype=np.float32
-            )
-            center = pts4.mean(axis=0)
-
-            # tip = the extreme point farthest from center
-            dists = np.linalg.norm(pts4 - center, axis=1)
-            tip_pt = pts4[np.argmax(dists)]
-
-            # compute angle (invert Y so up is positive)
-            dx = tip_pt[0] - center[0]
-            dy = center[1] - tip_pt[1]
-            angle = np.degrees(np.arctan2(dy, dx))
-
-            # map angle → direction
-            if -45 <= angle <= 45:
-                direction = "right"
-            elif 45 < angle <= 135:
-                direction = "up"
-            elif angle > 135 or angle < -135:
-                direction = "left"
-            else:  # -135 <= angle < -45
-                direction = "down"
-
-            label = f"{label} ({direction})"
-        # -------------------------------------------------------
-
-        # draw the contour and label
-        cv2.drawContours(frame, [approx], -1, (0, 255, 0), 2)
         cv2.putText(
             frame,
             label,
@@ -143,14 +159,14 @@ while True:
             2,
         )
 
-        # compute and annotate avg color
+        # annotate color
         mask = np.zeros_like(gray)
         cv2.drawContours(mask, [cnt], -1, 255, -1)
-        avg_color = cv2.mean(frame, mask=mask)[:3]
-        color_name = classify_color(tuple(map(int, avg_color)))
+        avg = cv2.mean(frame, mask=mask)[:3]
+        color = classify_color(tuple(map(int, avg)))
         cv2.putText(
             frame,
-            color_name,
+            color,
             (cX - 40, cY + 15),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
@@ -158,9 +174,8 @@ while True:
             1,
         )
 
-        break  # only show the first detected shape per frame
+        break  # only first shape per frame
 
-    # display results
     cv2.imshow("Thresholded", thresh)
     cv2.imshow("Detection", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
