@@ -54,14 +54,8 @@ try:
             continue
 
         # Convert frame to grayscale for feature detection
-        if len(frame.shape) == 3:
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        else:
-            gray_frame = frame
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if gray_frame is None or gray_frame.size == 0:
-            print("Warning: Skipping empty frame.")
-            continue
 
         # Detect ORB keypoints and descriptors in the current frame
         kp_frame, des_frame = orb.detectAndCompute(gray_frame, None)
