@@ -3,10 +3,12 @@ import time
 import numpy as np
 from picamera2 import Picamera2  # type: ignore
 
-
 # --- Your existing helper functions ---
+# (detect_shape, get_arrow_direction, classify_color, preprocess)
+# [These remain unchanged]
+
+
 def detect_shape(contour):
-    # ... (same as your earlier detect_shape)
     shape = "unidentified"
     peri = cv2.arcLength(contour, True)
     approx = cv2.approxPolyDP(contour, 0.03 * peri, True)
@@ -29,7 +31,7 @@ def detect_shape(contour):
 
 
 def get_arrow_direction(contour):
-    # ... (same as your earlier get_arrow_direction)
+    # same as before
     leftmost = tuple(contour[contour[:, :, 0].argmin()][0])
     rightmost = tuple(contour[contour[:, :, 0].argmax()][0])
     topmost = tuple(contour[contour[:, :, 1].argmin()][0])
@@ -87,91 +89,101 @@ time.sleep(2)
 x_off, y_off, w_off, h_off = 0, 0, 0, 0
 
 while True:
-    # Capture full frame
+    # 1) Capture full frame
     full_frame = picam2.capture_array()
     if full_frame is None:
         continue
 
-    # Apply last ROI crop if available
+    # 2) Apply last ROI crop, else use full
     if w_off > 0 and h_off > 0:
         frame = full_frame[y_off : y_off + h_off, x_off : x_off + w_off]
     else:
         frame = full_frame.copy()
 
-    # Preprocess on the (possibly cropped) frame
+    # 3) Preprocess & find contours
     processed = preprocess(frame)
     contours, hierarchy = cv2.findContours(
         processed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
-    if hierarchy is None:
-        cv2.imshow("Detection", full_frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+
+    shape_found = False
+
+    if hierarchy is not None:
+        hierarchy = hierarchy[0]
+        for i, cnt in enumerate(contours):
+            if cv2.contourArea(cnt) < 1000:
+                continue
+
+            # --- Shape detection & annotation ---
+            shape, poly = detect_shape(cnt)
+            label = shape
+            if shape == "arrow":
+                label += f" ({get_arrow_direction(cnt)})"
+
+            # compute centroid
+            M = cv2.moments(cnt)
+            cX = int(M["m10"] / M["m00"]) if M["m00"] else 0
+            cY = int(M["m01"] / M["m00"]) if M["m00"] else 0
+
+            # draw on cropped frame
+            cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                label,
+                (cX - 40, cY),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 0, 0),
+                2,
+            )
+
+            # color
+            mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+            cv2.drawContours(mask, [cnt], -1, 255, -1)
+            avg = cv2.mean(frame, mask=mask)[:3]
+            color = classify_color(tuple(map(int, avg)))
+            cv2.putText(
+                frame,
+                color,
+                (cX - 40, cY + 20),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 0, 0),
+                1,
+            )
+
+            # --- Update ROI offsets only if box is large enough ---
+            x_rel, y_rel, w_rel, h_rel = cv2.boundingRect(cnt)
+            if w_rel * h_rel > 5000:  # ignore tiny shadows
+                if w_off > 0 and h_off > 0:
+                    x_off += x_rel
+                    y_off += y_rel
+                else:
+                    x_off, y_off = x_rel, y_rel
+                w_off, h_off = w_rel, h_rel
+                shape_found = True
+
+            # draw on full frame for display
+            pts = poly + np.array([[x_off - x_rel, y_off - y_rel]])
+            cv2.drawContours(full_frame, [pts], -1, (0, 255, 0), 2)
+            cv2.putText(
+                full_frame,
+                label,
+                (x_off + cX - 40, y_off + cY),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 0, 0),
+                2,
+            )
+
+            shape_found = True
             break
-        continue
-    hierarchy = hierarchy[0]
 
-    # Find first significant contour
-    for i, cnt in enumerate(contours):
-        if cv2.contourArea(cnt) < 1000 and cv2.contourArea(cnt) > 3000:
-            continue
+    # 4) Reset ROI if no valid shape or too small
+    if not shape_found:
+        x_off, y_off, w_off, h_off = 0, 0, 0, 0
 
-        # Detect shape & color
-        shape, poly = detect_shape(cnt)
-        label = shape
-        if shape == "arrow":
-            dirn = get_arrow_direction(cnt)
-            label += f" ({dirn})"
-
-        M = cv2.moments(cnt)
-        cX = int(M["m10"] / M["m00"]) if M["m00"] else 0
-        cY = int(M["m01"] / M["m00"]) if M["m00"] else 0
-
-        cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
-        cv2.putText(
-            frame, label, (cX - 40, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2
-        )
-
-        # Color
-        mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-        cv2.drawContours(mask, [cnt], -1, 255, -1)
-        avg = cv2.mean(frame, mask=mask)[:3]
-        color = classify_color(tuple(map(int, avg)))
-        cv2.putText(
-            frame,
-            color,
-            (cX - 40, cY + 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 0, 0),
-            1,
-        )
-
-        # Compute local bounding box, then update global offsets
-        x_rel, y_rel, w_rel, h_rel = cv2.boundingRect(cnt)
-        if w_off > 0 and h_off > 0:
-            x_off += x_rel
-            y_off += y_rel
-        else:
-            x_off, y_off = x_rel, y_rel
-        w_off, h_off = w_rel, h_rel
-
-        # Draw on full_frame (with offset)
-        # translate poly points to full_frame coords
-        pts = poly + np.array([[x_off - x_rel, y_off - y_rel]])
-        cv2.drawContours(full_frame, [pts], -1, (0, 255, 0), 2)
-        cv2.putText(
-            full_frame,
-            label,
-            (x_off + cX - 40, y_off + cY),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (255, 0, 0),
-            2,
-        )
-
-        break  # only first contour
-
-    # Show results
+    # 5) Show
     cv2.imshow("Thresholded", processed)
     cv2.imshow("Detection", full_frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
