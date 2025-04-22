@@ -1,55 +1,38 @@
 import cv2
-import imutils
-import utility
 from picamera2 import Picamera2  # type: ignore
+import utility
 
-# --- Load all your templates and descriptors once at startup ---
-images, names = utility.readImages()  # returns list of template images and their labels
-descriptors = utility.getDescriptors(
-    images
-)  # computes ORB descriptors for each template
+# load templates + descriptors once
+images, names = utility.readImages()
+descriptors = utility.getDescriptors(images)
 
-# --- Configure and start the PiCamera2 preview ---
+# configure PiCamera2
 picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration(
-    main={"format": "BGR888", "size": (640, 480)}
-)
-picam2.configure(preview_config)
+cfg = picam2.create_preview_configuration(main={"format": "BGR888", "size": (640, 480)})
+picam2.configure(cfg)
 picam2.start()
 
 try:
     while True:
         frame = picam2.capture_array()
-        name = utility.findMatch(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), descriptors, names)
+        if frame is None or frame.size == 0:
+            continue
 
-        # Optional: resize to speed up matching / fit window
-        frame = imutils.resize(frame, width=400)
-
-        # Convert to gray for matching
+        # convert to gray and run matcher
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        label = utility.findMatch(gray, descriptors, names)
+        if not label:
+            label = "No Match"
 
-        # Find the best template match for this frame
-        name = utility.findMatch(gray, descriptors, names)
-        if name is None:
-            name = "No Match"
-
-        # Draw the result on the frame
+        # draw result
         cv2.putText(
-            frame,
-            name,
-            (20, 30),
-            cv2.FONT_HERSHEY_COMPLEX,
-            0.8,
-            (255, 0, 255),
-            2,
+            frame, label, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2
         )
-
-        # Show the live feed
         cv2.imshow("Detection", frame)
-        key = cv2.waitKey(1)
-        if key == 27 or key == ord("q"):  # ESC or 'q' to quit
+
+        if cv2.waitKey(1) in (27, ord("q")):  # ESC or 'q'
             break
 
 finally:
-    cv2.destroyAllWindows()
     picam2.stop()
+    cv2.destroyAllWindows()
