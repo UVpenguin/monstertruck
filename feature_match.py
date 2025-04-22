@@ -25,7 +25,7 @@ try:
         )
         if not label:
             label = "No Match"
-        else:
+        elif "arrow" in label and scene_pts is not None:
             # if it's an arrow template, refine the direction
             if "arrow" in label:
                 # compute bounding rect of the matched polygon (scene_pts)
