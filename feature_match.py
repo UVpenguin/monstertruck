@@ -27,7 +27,7 @@ try:
         if not label:
             label = "No Match"
 
-        # only refine arrows using your extreme‑point method
+        # only refine arrows using your extreme?point method
         elif "arrow" in label and scene_pts is not None:
             h_f, w_f = frame.shape[:2]
             pts = scene_pts.reshape(-1, 2)
@@ -53,7 +53,7 @@ try:
                 if cnts:
                     cnt = max(cnts, key=cv2.contourArea)
 
-                    # your extreme‑point method:
+                    # your extreme?point method:
                     leftmost = tuple(cnt[cnt[:, :, 0].argmin()][0])
                     rightmost = tuple(cnt[cnt[:, :, 0].argmax()][0])
                     topmost = tuple(cnt[cnt[:, :, 1].argmin()][0])
@@ -64,7 +64,7 @@ try:
                     )
                     center = pts4.mean(axis=0)
 
-                    # find the tip as the extreme‑point farthest from center
+                    # find the tip as the extreme?point farthest from center
                     dists = np.linalg.norm(pts4 - center, axis=1)
                     tip_pt = pts4[np.argmax(dists)]
 
