@@ -25,19 +25,7 @@ def detect_shape(contour):
     elif vertices == 6:
         shape = "hexagon"
     elif vertices > 6:
-        hull = cv2.convexHull(contour, returnPoints=False)
-        if hull is not None and len(hull) > 3:
-            try:
-                defects = cv2.convexityDefects(contour, hull)
-            except cv2.error:
-                defects = None
-            # require exactly 2–3 defects for an arrow
-            if defects is not None and 2 <= defects.shape[0] <= 3:
-                shape = "arrow"
-            else:
-                shape = "circle"
-        else:
-            shape = "circle"
+        shape = "circle"
 
     return shape, approx
 
@@ -80,7 +68,7 @@ def get_arrow_direction(contour):
 # Initialize camera
 picam2 = Picamera2()
 preview_config = picam2.createconfig = picam2.create_preview_configuration(
-    main={"format": "RGB888", "size": (640, 280)}
+    main={"format": "RGB888", "size": (640, 480)}
 )
 picam2.configure(preview_config)
 picam2.start()
@@ -95,7 +83,7 @@ while True:
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     thresh = cv2.morphologyEx(
-        thresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8), iterations=2
+        thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=2
     )
 
     contours, hierarchy = cv2.findContours(
