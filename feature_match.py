@@ -94,7 +94,7 @@ def get_arrow_direction(contour):
         arrow_direction = "right"
     elif -135 <= angle < -45:
         arrow_direction = "up"
-    
+
     return arrow_direction
 
 
