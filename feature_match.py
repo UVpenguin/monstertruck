@@ -147,7 +147,7 @@ while True:
 
     for i, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
-        if area < 500 and area < 200:
+        if area < 1000:
             continue
 
         # 1) detect the outer shape
@@ -162,7 +162,7 @@ while True:
         for j in child_idx:
             inner = contours[j]
             inner_area = cv2.contourArea(inner)
-            if inner_area < 50:
+            if inner_area < 100:
                 continue
 
             shape, approx_inner = detect_shape(inner)
