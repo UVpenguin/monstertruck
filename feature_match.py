@@ -51,18 +51,51 @@ def get_arrow_direction(contour):
     Determines the rough orientation of an arrow using a minimum area rectangle.
     Returns a string indicating the direction ("up", "down", "left", or "right").
     """
-    rect = cv2.minAreaRect(contour)
-    angle = rect[-1]
+    leftmost = tuple(contour[contour[:, :, 0].argmin()][0])
+    rightmost = tuple(contour[contour[:, :, 0].argmax()][0])
+    topmost = tuple(contour[contour[:, :, 1].argmin()][0])
+    bottommost = tuple(contour[contour[:, :, 1].argmax()][0])
 
-    if angle < -45:
-        angle = 90 + angle
+    # Draw circles at the extreme points.
+    cv2.circle(contour, leftmost, 3, (0, 0, 255), -1)
+    cv2.circle(contour, rightmost, 3, (0, 0, 255), -1)
+    cv2.circle(contour, topmost, 3, (0, 0, 255), -1)
+    cv2.circle(contour, bottommost, 3, (0, 0, 255), -1)
+    # Optionally, draw lines connecting them.
+    cv2.line(contour, leftmost, topmost, (255, 0, 0), 1)
+    cv2.line(contour, topmost, rightmost, (255, 0, 0), 1)
+    cv2.line(contour, rightmost, bottommost, (255, 0, 0), 1)
+    cv2.line(contour, bottommost, leftmost, (255, 0, 0), 1)
 
-    (w, h) = rect[1]
-    if w < h:
-        direction = "up" if angle < 45 else "down"
-    else:
-        direction = "right" if angle < 45 else "left"
-    return direction
+    # Now, compute the arrow orientation using these four points.
+    pts = np.array([leftmost, rightmost, topmost, bottommost])
+    center = np.mean(pts, axis=0)  # centroid of extreme points
+    # Compute Euclidean distances from the center.
+    dists = np.linalg.norm(pts - center, axis=1)
+    # The arrow tip is assumed to be the point farthest from the center.
+    arrow_tip = pts[np.argmax(dists)]
+
+    # For computing angle, adjust for image coordinate system.
+    dx = arrow_tip[0] - center[0]
+    dy = center[1] - arrow_tip[1]  # invert y so that upward is positive
+    angle = np.degrees(np.arctan2(dy, dx))
+
+    # Determine direction based on angle.
+    # For example, assume:
+    # - Right: angle between -45 and 45
+    # - Up: angle between 45 and 135
+    # - Left: angle above 135 or below -135
+    # - Down: angle between -135 and -45
+    if -45 <= angle <= 45:
+        arrow_direction = "left"
+    elif 45 < angle <= 135:
+        arrow_direction = "down"
+    elif angle > 135 or angle < -135:
+        arrow_direction = "right"
+    elif -135 <= angle < -45:
+        arrow_direction = "up"
+    
+    return arrow_direction
 
 
 # Initialize camera
@@ -97,7 +130,7 @@ while True:
 
     for i, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
-        if area < 500 and area < 50:
+        if area < 500 and area < 200:
             continue
 
         # 1) detect the outer shape
