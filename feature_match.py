@@ -107,7 +107,7 @@ def preprocess(frame):
     blur = cv2.GaussianBlur(v, (5, 5), 0)
 
     # white mask
-    white_mask = cv2.inRange(blur, (200, 0, 0), (255, 255, 255))
+    white_mask = cv2.inRange(blur, (0, 0, 100), (0, 255, 255))
     white = cv2.bitwise_not(blur, blur, mask=white_mask)
 
     _, thresh = cv2.threshold(white, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
