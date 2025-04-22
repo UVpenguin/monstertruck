@@ -10,16 +10,8 @@ bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 # Load template images and compute their ORB descriptors
 template_dir = "templates"
 template_files = [
-    "blue circle down arrow.jpg",
-    "blue circle up arrow.jpg",
-    "blue rectangle.jpg",
-    "blue rectangle left arrow.jpg",
-    "blue rectangle right arrow.jpg",
-    "blue triangle.jpg",
-    "green hexagon.jpg",
-    "green semi-circle.jpg",
-    "red circle.jpg",
-    "red pentagon.jpg",
+    "green hexagon.png",
+    "red circle.png",
 ]
 templates = []
 for filename in template_files:
