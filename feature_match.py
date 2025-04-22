@@ -101,14 +101,10 @@ def get_arrow_direction(contour):
 def preprocess(frame):
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    h, s, v = cv2.split(hsv)
-
-    # Apply Gaussian blur to the grayscale image
-    blur = cv2.GaussianBlur(v, (5, 5), 0)
 
     # white mask
-    white_mask = cv2.inRange(blur, (0, 0, 100), (0, 255, 255))
-    white = cv2.bitwise_not(blur, blur, mask=white_mask)
+    white_mask = cv2.inRange(hsv, (0, 0, 100), (0, 255, 255))
+    white = cv2.bitwise_not(hsv, hsv, mask=white_mask)
 
     _, thresh = cv2.threshold(white, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
