@@ -49,7 +49,10 @@ MIN_MATCH_COUNT = 4  # minimum number of matches to consider a template detected
 
 try:
     picam2 = Picamera2()
-    picam2.configure(picam2.create_preview_configuration())
+    preview_config = picam2.create_preview_configuration(
+        main={"format": "BGR888", "size": (640, 480)}
+    )
+    picam2.configure(preview_config)
     picam2.start()
 
     while True:
