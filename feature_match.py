@@ -45,12 +45,6 @@ for filename in template_files:
         }
     )
 
-# Set up video capture (assuming a camera is connected)
-cap = cv2.VideoCapture(0)  # Use the appropriate camera index or video file
-if not cap.isOpened():
-    print("Error: Could not open camera.")
-    exit(1)
-
 MIN_MATCH_COUNT = 4  # minimum number of matches to consider a template detected
 
 try:
@@ -153,5 +147,4 @@ except KeyboardInterrupt:
     cv2.destroyAllWindows()
 
 # Clean up
-cap.release()
 cv2.destroyAllWindows()
