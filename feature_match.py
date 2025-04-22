@@ -19,7 +19,7 @@ try:
             continue
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        label, scene_pts = utility.findMatch(gray, templ_kps, templ_des, names)
+        label, scene_pts = utility.findMatch(gray, tmpl_kps, tmpl_des, names)
         if not label:
             label = "No Match"
         if not label:
