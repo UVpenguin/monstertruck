@@ -107,6 +107,7 @@ def preprocess(frame):
     # white mask
     white_mask = cv2.inRange(hsv, (0, 0, 100), (0, 255, 255))
     v_masked = cv2.bitwise_and(v, v, mask=cv2.bitwise_not(white_mask))
+    cv2.imshow("white_mask", v_masked)
 
     _, thresh = cv2.threshold(v_masked, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
