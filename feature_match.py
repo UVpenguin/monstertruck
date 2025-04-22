@@ -100,21 +100,25 @@ def get_arrow_direction(contour):
 
 def preprocess(frame):
 
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # 1) compute a smooth background
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    v = cv2.GaussianBlur(hsv[:, :, 2], (5, 5), 0)
+    # you already have blur = cv2.GaussianBlur(gray, ...)
+    thresh = cv2.adaptiveThreshold(
+        blur,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        blockSize=21,  # try 11,15,21...
+        C=10,  # tune from 2–10
+    )
 
-    # white mask
-    white_mask = cv2.inRange(hsv, (0, 0, 100), (0, 255, 255))
-    v_masked = cv2.bitwise_not(v, v, mask=white_mask)
-    cv2.imshow("white_mask", v_masked)
-
-    _, thresh = cv2.threshold(v_masked, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-
-    # Cleanup Edges
     thresh = cv2.morphologyEx(
         thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=2
     )
+
+    return thresh
 
     return thresh
 
