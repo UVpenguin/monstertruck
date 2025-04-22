@@ -107,12 +107,15 @@ def preprocess(frame):
     # 2) normalize the image by dividing by that background
     norm = cv2.divide(gray, bg, scale=255)
 
-    # 3) (optional) boost local contrast
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    norm = clahe.apply(norm)
-
-    # 4) now threshold (Otsu or fixed)
-    _, thresh = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # you already have blur = cv2.GaussianBlur(gray, ...)
+    thresh = cv2.adaptiveThreshold(
+        norm,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        blockSize=15,  # try 11,15,21...
+        C=4,  # tune from 2–10
+    )
 
     return thresh
 
