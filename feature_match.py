@@ -114,6 +114,10 @@ def preprocess(frame):
         C=4,  # tune from 2–10
     )
 
+    thresh = cv2.morphologyEx(
+        thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=2
+    )
+
     return thresh
 
 
