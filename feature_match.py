@@ -26,18 +26,24 @@ try:
         if not label:
             label = "No Match"
         elif "arrow" in label and scene_pts is not None:
-            # if it's an arrow template, refine the direction
-            if "arrow" in label:
-                # compute bounding rect of the matched polygon (scene_pts)
-                pts = scene_pts.reshape(-1, 2)
-                x, y, w_box, h_box = cv2.boundingRect(pts)
-                roi = frame[y : y + h_box, x : x + w_box]
-                # simple threshold to isolate white arrow on colored background
+            h_f, w_f = frame.shape[:2]
+            pts = scene_pts.reshape(-1, 2)
+            x, y, w_box, h_box = cv2.boundingRect(pts)
+
+            # clamp to image bounds
+            x1 = max(x, 0)
+            y1 = max(y, 0)
+            x2 = min(x + w_box, w_f)
+            y2 = min(y + h_box, h_f)
+
+            # ensure we have a non-zero ROI
+            if x2 > x1 and y2 > y1:
+                roi = frame[y1:y2, x1:x2]
+                # now safe to convert
                 gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
                 _, th = cv2.threshold(
                     gray_roi, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
                 )
-                # find the largest contour (the arrow)
                 cnts, _ = cv2.findContours(
                     th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
                 )
