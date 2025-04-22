@@ -100,6 +100,7 @@ def get_arrow_direction(contour):
 
 def preprocess(frame):
 
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # 1) compute a smooth background
     bg = cv2.GaussianBlur(gray, (51, 51), 0)
 
