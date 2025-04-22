@@ -20,9 +20,7 @@ picam2.start()
 try:
     while True:
         frame = picam2.capture_array()
-        if frame is None or frame.size == 0:
-            # skip empty frames
-            continue
+        name = findMatch(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), descriptors, names)
 
         # Optional: resize to speed up matching / fit window
         frame = imutils.resize(frame, width=400)
