@@ -37,7 +37,7 @@ for filename in template_files:
         }
     )
 
-MIN_MATCH_COUNT = 4  # minimum number of matches to consider a template detected
+MIN_MATCH_COUNT = 1  # minimum number of matches to consider a template detected
 
 try:
     picam2 = Picamera2()
@@ -55,7 +55,6 @@ try:
 
         # Convert frame to grayscale for feature detection
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
 
         # Detect ORB keypoints and descriptors in the current frame
         kp_frame, des_frame = orb.detectAndCompute(gray_frame, None)
