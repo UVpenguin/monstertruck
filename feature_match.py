@@ -47,13 +47,13 @@ def get_arrow_direction(contour):
     angle = np.degrees(np.arctan2(dy, dx))
 
     if -45 <= angle <= 45:
-        return "right"
-    elif 45 < angle <= 135:
-        return "up"
-    elif angle > 135 or angle < -135:
         return "left"
-    else:
+    elif 45 < angle <= 135:
         return "down"
+    elif angle > 135 or angle < -135:
+        return "right"
+    else:
+        return "up"
 
 
 def classify_color(avg_color):
