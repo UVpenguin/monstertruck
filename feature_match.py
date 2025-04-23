@@ -113,8 +113,6 @@ while True:
         processed_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
 
-    shape_found = False
-
     if hierarchy is not None:
         hierarchy = hierarchy[0]
         for i, cnt in enumerate(contours):
@@ -159,26 +157,7 @@ while True:
                 1,
             )
 
-            mask = np.zeros_like(processed_frame)
-            cv2.drawContours(mask, [cnt], -1, 255, -1)
-            avg = cv2.mean(frame, mask=mask)[:3]
-            color = classify_color(tuple(map(int, avg)))
-            cv2.putText(
-                frame,
-                color,
-                (cX - 40, cY + 15),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 0, 0),
-                1,
-            )
-
-            shape_found = True
             break
-
-    # 4) Reset ROI if no valid shape or too small
-    if not shape_found:
-        x_off, y_off, w_off, h_off = 0, 0, 0, 0
 
     # 5) Show
     cv2.imshow("Thresholded", processed_frame)
