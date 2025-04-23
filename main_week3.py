@@ -141,6 +141,7 @@ def color_mask_override(frame):
     # camera detects blue as red
     red_mask = cv.inRange(hsv, (0, 50, 50), (30, 255, 255))
     red = cv.bitwise_and(frame, frame, mask=red_mask)
+    cv.imshow("Red Mask", red)
     red_color_percentage = color_percentage(red, red_mask)
 
     # mask of blue
