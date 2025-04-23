@@ -186,7 +186,7 @@ def main():
     servo_thread.start()
 
     picam2 = Picamera2()
-    picam2.configure(picam2.create_preview_configuration())
+    picam2.configure(picam2.create_preview_configuration(main={"format": "BGR888"}))
     picam2.start()
     sleep(2)
 
