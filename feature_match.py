@@ -68,8 +68,21 @@ def classify_color(avg_color):
         return "undefined"
 
 
+def color_prepreprocess(frame):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    green_mask = cv2.inRange(hsv, (36, 50, 50), (70, 255, 255))
+    red_mask = cv2.inRange(hsv, (0, 50, 50), (30, 255, 255))
+    blue_mask = cv2.inRange(hsv, (100, 150, 0), (140, 255, 255))
+
+    color = cv2.bitwise_and(frame, frame, mask=green_mask | red_mask | blue_mask)
+    return color
+
+
 def preprocess(frame):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    color = color_prepreprocess(frame)
+    bgr = cv2.cvtColor(color, cv2.COLOR_HSV2BGR)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     thresh = cv2.morphologyEx(
