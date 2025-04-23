@@ -71,7 +71,7 @@ def classify_color(avg_color):
 def color_prepreprocess(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    green_mask = cv2.inRange(hsv, (36, 50, 50), (70, 255, 255))
+    green_mask = cv2.inRange(hsv, (36, 50, 50), (90, 255, 255))
     red_mask = cv2.inRange(hsv, (0, 50, 50), (30, 255, 255))
     blue_mask = cv2.inRange(hsv, (100, 150, 0), (140, 255, 255))
 
