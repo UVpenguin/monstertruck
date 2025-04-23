@@ -154,7 +154,6 @@ def color_mask_override(frame):
     # yellow is actually blue
     yellow_mask = cv.inRange(hsv, (90, 50, 0), (100, 255, 255))
     yellow = cv.bitwise_and(frame, frame, mask=yellow_mask)
-    cv.imshow("Yellow", yellow)
     yellow_color_percentage = color_percentage(yellow, yellow_mask)
 
     print(
@@ -215,7 +214,6 @@ def main():
                     sweeping_enabled.set()
 
             # cv.imshow("Binary Image", binary_img)
-            cv.imshow("Shapes", shapes)
             cv.imshow("Binary Image", frame)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
