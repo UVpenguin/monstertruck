@@ -128,6 +128,18 @@ while True:
             cX = int(M["m10"] / M["m00"]) if M["m00"] else 0
             cY = int(M["m01"] / M["m00"]) if M["m00"] else 0
 
+            # draw frame
+            cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                label,
+                (cX - 40, cY),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 0, 0),
+                2,
+            )
+
             # color
             mask = np.zeros(frame.shape[:2], dtype=np.uint8)
             cv2.drawContours(mask, [cnt], -1, 255, -1)
