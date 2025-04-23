@@ -117,7 +117,6 @@ def servo_control():
             sleep(0.1)
 
 
-# TODO find the right color percentages for the line
 def color_percentage(hsv, color_mask):
     height, width, _ = hsv.shape
     total_pixels = height * width
@@ -159,8 +158,6 @@ def color_mask_override(frame):
     print(
         f"Red: {red_color_percentage:.2f}, Green: {green_color_percentage:.2f}, Blue: {blue_color_percentage:.2f}, Yellow: {yellow_color_percentage:.2f}"
     )
-
-    # TODO make a yellow mask
 
     if red_color_percentage > 0.15:
         FRAME_OVERRIDE = True

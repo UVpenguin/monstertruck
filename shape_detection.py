@@ -1,5 +1,4 @@
 import cv2
-import time
 import numpy as np
 
 # --- Your existing helper functions ---
@@ -29,6 +28,7 @@ def detect_shape(contour):
     return shape, approx
 
 
+# TODO print shape detected to console
 def get_arrow_direction(contour):
     # same as before
     leftmost = tuple(contour[contour[:, :, 0].argmin()][0])
