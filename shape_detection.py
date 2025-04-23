@@ -1,7 +1,6 @@
 import cv2
 import time
 import numpy as np
-from picamera2 import Picamera2  # type: ignore
 
 # --- Your existing helper functions ---
 # (detect_shape, get_arrow_direction, classify_color, preprocess)
@@ -89,14 +88,6 @@ def preprocess(frame):
         thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=2
     )
     return thresh
-
-
-# --- Camera setup ---
-picam2 = Picamera2()
-preview_config = picam2.create_preview_configuration(main={"format": "BGR888"})
-picam2.configure(preview_config)
-picam2.start()
-time.sleep(2)
 
 
 def main(frame):

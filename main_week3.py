@@ -194,7 +194,7 @@ def main():
         while True:
 
             frame = picam2.capture_array()
-            shapes = shape_detect.main()
+            shapes = shape_detect.main(frame)
             override = color_mask_override(frame)
             if not FRAME_OVERRIDE:
                 binary_img = preprocess(frame)
