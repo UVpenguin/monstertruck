@@ -118,8 +118,7 @@ while True:
                 continue
 
             # --- Shape detection & annotation ---
-            shape, poly = detect_shape(cnt)
-            label = shape
+            outer_label, outer_poly = detect_shape(cnt)
 
             found_arrow = False
             arrow_label = None
@@ -140,6 +139,11 @@ while True:
                     found_arrow = True
                     break
 
+            # decides what arrow and label to use
+            label = arrow_label if found_arrow else outer_label
+            poly = outer_poly if not found_arrow else approx_inner
+
+            cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
             # compute centroid
             M = cv2.moments(cnt)
             cX = int(M["m10"] / M["m00"]) if M["m00"] else 0
