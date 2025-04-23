@@ -120,7 +120,7 @@ while True:
             # --- Shape detection & annotation ---
             shape, poly = detect_shape(cnt)
             label = shape
-            if shape == "arrow":
+            if shape:
                 label += f" ({get_arrow_direction(cnt)})"
 
             # compute centroid
