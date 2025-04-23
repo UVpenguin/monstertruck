@@ -206,6 +206,7 @@ def main():
                     sweeping_enabled.set()
 
             cv.imshow("Binary Image", binary_img)
+            cv.imshow("Binary Image", frame)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
 
