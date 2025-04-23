@@ -172,11 +172,12 @@ def color_mask_override(frame):
         FRAME_OVERRIDE = True
         frame = blue
         return blue
+    if yellow_color_percentage > 0.15:
+        FRAME_OVERRIDE = True
+        frame = yellow
+        return yellow
     else:
         FRAME_OVERRIDE = False
-
-    # if yellow_color_percentage > 0.15:
-    #     FRAME_OVERRIDE = True
 
 
 def main():
