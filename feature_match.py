@@ -114,14 +114,31 @@ while True:
     if hierarchy is not None:
         hierarchy = hierarchy[0]
         for i, cnt in enumerate(contours):
-            if cv2.contourArea(cnt) < 1000:
+            if cv2.contourArea(cnt) < 1000 and cv2.contourArea(cnt) < 200:
                 continue
 
             # --- Shape detection & annotation ---
             shape, poly = detect_shape(cnt)
             label = shape
-            if shape and hierarchy.any():
-                label += f" ({get_arrow_direction(cnt)})"
+
+            found_arrow = False
+            arrow_label = None
+
+            # scan all child contours of this outer one
+            child_idx = [j for j, h in enumerate(hierarchy) if h[3] == i]
+            for j in child_idx:
+                inner = contours[j]
+                inner_area = cv2.contourArea(inner)
+                if inner_area < 50:
+                    continue
+
+                shape, approx_inner = detect_shape(inner)
+                if shape:
+                    direction = get_arrow_direction(inner)
+
+                    arrow_label = f"arrow ({direction})"
+                    found_arrow = True
+                    break
 
             # compute centroid
             M = cv2.moments(cnt)
