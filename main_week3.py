@@ -8,6 +8,7 @@ import movement as motor
 from picamera2 import Picamera2  # type: ignore
 from gpiozero.pins.pigpio import PiGPIOFactory
 from gpiozero import AngularServo
+import shape_detection as shape_detect
 
 # Setup GPIO
 GPIO.cleanup()
@@ -193,6 +194,7 @@ def main():
         while True:
 
             frame = picam2.capture_array()
+            shapes = shape_detect.main()
             override = color_mask_override(frame)
             if not FRAME_OVERRIDE:
                 binary_img = preprocess(frame)
@@ -212,7 +214,8 @@ def main():
                 if not sweeping_enabled.is_set():
                     sweeping_enabled.set()
 
-            cv.imshow("Binary Image", binary_img)
+            # cv.imshow("Binary Image", binary_img)
+            cv.imshow("Shapes", shapes)
             cv.imshow("Binary Image", frame)
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break

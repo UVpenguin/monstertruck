@@ -172,4 +172,4 @@ def main(frame):
             )
 
             break
-    return processed_frame, frame
+    return processed_frame
