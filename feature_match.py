@@ -103,20 +103,14 @@ x_off, y_off, w_off, h_off = 0, 0, 0, 0
 
 while True:
     # 1) Capture full frame
-    full_frame = picam2.capture_array()
-    if full_frame is None:
+    frame = picam2.capture_array()
+    if frame is None:
         continue
 
-    # 2) Apply last ROI crop, else use full
-    if w_off > 0 and h_off > 0:
-        frame = full_frame[y_off : y_off + h_off, x_off : x_off + w_off]
-    else:
-        frame = full_frame.copy()
-
     # 3) Preprocess & find contours
-    processed = preprocess(frame)
+    processed_frame = preprocess(frame)
     contours, hierarchy = cv2.findContours(
-        processed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        processed_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
     )
 
     shape_found = False
@@ -165,28 +159,18 @@ while True:
                 1,
             )
 
-            # --- Update ROI offsets only if box is large enough ---
-            x_rel, y_rel, w_rel, h_rel = cv2.boundingRect(cnt)
-            if w_rel * h_rel > 5000:  # ignore tiny shadows
-                if w_off > 0 and h_off > 0:
-                    x_off += x_rel
-                    y_off += y_rel
-                else:
-                    x_off, y_off = x_rel, y_rel
-                w_off, h_off = w_rel, h_rel
-                shape_found = True
-
-            # draw on full frame for display
-            pts = poly + np.array([[x_off - x_rel, y_off - y_rel]])
-            cv2.drawContours(full_frame, [pts], -1, (0, 255, 0), 2)
+            mask = np.zeros_like(processed_frame)
+            cv2.drawContours(mask, [cnt], -1, 255, -1)
+            avg = cv2.mean(frame, mask=mask)[:3]
+            color = classify_color(tuple(map(int, avg)))
             cv2.putText(
-                full_frame,
-                label,
-                (x_off + cX - 40, y_off + cY),
+                frame,
+                color,
+                (cX - 40, cY + 15),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
+                0.5,
                 (255, 0, 0),
-                2,
+                1,
             )
 
             shape_found = True
@@ -197,8 +181,8 @@ while True:
         x_off, y_off, w_off, h_off = 0, 0, 0, 0
 
     # 5) Show
-    cv2.imshow("Thresholded", processed)
-    cv2.imshow("Detection", full_frame)
+    cv2.imshow("Thresholded", processed_frame)
+    cv2.imshow("Detection", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
