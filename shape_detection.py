@@ -99,13 +99,8 @@ picam2.start()
 time.sleep(2)
 
 
-while True:
-    # 1) Capture full frame
-    frame = picam2.capture_array()
-    if frame is None:
-        continue
+def main(frame):
 
-    # 3) Preprocess & find contours
     processed_frame = preprocess(frame)
     contours, hierarchy = cv2.findContours(
         processed_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
@@ -177,12 +172,4 @@ while True:
             )
 
             break
-
-    # 5) Show
-    cv2.imshow("Thresholded", processed_frame)
-    cv2.imshow("Detection", frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-picam2.stop()
-cv2.destroyAllWindows()
+    return processed_frame, frame
