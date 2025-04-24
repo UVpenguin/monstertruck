@@ -49,6 +49,7 @@ FRAME_OVERRIDE = False
 
 
 def preprocess(frame):
+    global FRAME_OVERRIDE
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     if FRAME_OVERRIDE:
         _, binary = cv.threshold(gray, 100, 255, cv.THRESH_BINARY_INV)
