@@ -137,15 +137,20 @@ def color_mask_override(frame):
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV_FULL)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    green_mask = cv.inRange(hsv, (80, 50, 50), (90, 255, 255))
+    green_mask = cv.inRange(hsv, (25, 52, 72), (102, 255, 255))
+    inverse_green_mask = 255 - green_mask
 
     blue_mask = cv.inRange(hsv, (200, 150, 0), (255, 255, 255))
-    blue_and_green = cv.bitwise_and(frame, frame, mask=blue_mask | green_mask)
+    inverse_blue_mask = 255 - blue_mask
+
+    blue_and_green = cv.bitwise_and(
+        frame, frame, mask=inverse_green_mask | inverse_blue_mask
+    )
     blue_and_green_color_percentage = color_percentage(
         blue_and_green, blue_mask | green_mask
     )
 
-    removed_frame = cv.subtract(frame, blue_and_green)
+    removed_frame = blue_and_green
     cv.imshow("Removed Frame", removed_frame)
     # mask of red
     # camera detects blue as red
