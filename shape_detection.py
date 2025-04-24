@@ -58,11 +58,11 @@ def get_arrow_direction(contour):
 def classify_color(avg_color):
     b, g, r = avg_color
     if r > g and r > b:
-        return "red"
+        return "blue"
     elif g > r and g > b:
         return "green"
     elif b > r and b > g:
-        return "blue"
+        return "red"
     else:
         return "undefined"
 
