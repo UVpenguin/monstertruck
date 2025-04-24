@@ -137,10 +137,10 @@ def color_mask_override(frame):
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV_FULL)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    green_mask = cv.inRange(hsv, (25, 52, 72), (102, 255, 255))
+    green_mask = cv.inRange(hsv, (75, 40, 50), (80, 100, 70))
     inverse_green_mask = 255 - green_mask
 
-    blue_mask = cv.inRange(hsv, (200, 150, 0), (255, 255, 255))
+    blue_mask = cv.inRange(hsv, (12, 65, 30), (32, 90, 85))
     inverse_blue_mask = 255 - blue_mask
 
     blue_and_green = cv.bitwise_and(
