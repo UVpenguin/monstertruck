@@ -190,14 +190,15 @@ def main():
         while True:
 
             frame = picam2.capture_array()
-            shapes = shape_detect.main(frame)
             override = color_mask_override(frame)
+
             if FRAME_OVERRIDE:
                 binary_img = preprocess(override)
             else:
                 binary_img = preprocess(frame)
 
             angle = detect_line_direction(binary_img, sample_offset=50)
+            shapes = shape_detect.main(frame)
 
             if angle is not None:
                 # Line detected: disable sweeping so servo stays centered.
