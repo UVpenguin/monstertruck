@@ -136,7 +136,7 @@ def main(frame):
             cY = int(M["m01"] / M["m00"]) if M["m00"] else 0
 
             # draw frame
-            cv2.drawContours(frame, [poly], -1, (0, 255, 0), 2)
+            cv2.drawContours(frame, [poly], -1, (184, 227, 233), 2)
             cv2.putText(
                 frame,
                 label,
