@@ -138,14 +138,14 @@ def color_mask_override(frame):
 
     # mask of green (36,25,25) ~ (86, 255,255)
     green_mask = cv.inRange(hsv, (80, 50, 50), (90, 255, 255))
-    green = cv.bitwise_and(frame, frame, mask=green_mask)
-    green_color_percentage = color_percentage(green, green_mask)
 
     blue_mask = cv.inRange(hsv, (200, 150, 0), (255, 255, 255))
-    blue = cv.bitwise_and(frame, frame, mask=blue_mask)
-    blue_color_percentage = color_percentage(blue, blue_mask)
+    blue_and_green = cv.bitwise_and(frame, frame, mask=blue_mask | green_mask)
+    blue_and_green_color_percentage = color_percentage(
+        blue_and_green, blue_mask | green_mask
+    )
 
-    removed_frame = cv.bitwise_not(frame, frame, mask=blue_mask | green_mask)
+    removed_frame = cv.subtract(frame, blue_and_green)
     cv.imshow("Removed Frame", removed_frame)
     # mask of red
     # camera detects blue as red
@@ -165,9 +165,7 @@ def color_mask_override(frame):
     # print(
     #     f"Red: {red_color_percentage:.2f}, Green: {green_color_percentage:.2f}, Blue: {blue_color_percentage:.2f}, Yellow: {yellow_color_percentage:.2f}"
     # )
-    if green_color_percentage > 0.01:
-        FRAME_OVERRIDE = True
-    if blue_color_percentage > 0.01:
+    if blue_and_green_color_percentage > 0.01:
         FRAME_OVERRIDE = True
     if red_color_percentage > 0.15:
         FRAME_OVERRIDE = True
