@@ -194,10 +194,11 @@ def main():
             frame = picam2.capture_array()
             shapes = shape_detect.main(frame)
             override = color_mask_override(frame)
-            if not FRAME_OVERRIDE:
-                binary_img = preprocess(frame)
-            else:
+            if FRAME_OVERRIDE:
                 binary_img = preprocess(override)
+            else:
+                binary_img = preprocess(frame)
+
             angle = detect_line_direction(binary_img, sample_offset=50)
 
             if angle is not None:
