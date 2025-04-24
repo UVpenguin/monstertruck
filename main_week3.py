@@ -134,14 +134,14 @@ def color_percentage(hsv, color_mask):
 def color_mask_override(frame):
     global FRAME_OVERRIDE
 
-    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV_FULL)
 
     # mask of green (36,25,25) ~ (86, 255,255)
-    green_mask = cv.inRange(hsv, (30, 50, 50), (70, 255, 255))
+    green_mask = cv.inRange(hsv, (80, 50, 50), (90, 255, 255))
     green = cv.bitwise_and(frame, frame, mask=green_mask)
     green_color_percentage = color_percentage(green, green_mask)
 
-    blue_mask = cv.inRange(hsv, (100, 150, 0), (179, 255, 255))
+    blue_mask = cv.inRange(hsv, (200, 150, 0), (255, 255, 255))
     blue = cv.bitwise_and(frame, frame, mask=blue_mask)
     blue_color_percentage = color_percentage(blue, blue_mask)
 
@@ -149,7 +149,7 @@ def color_mask_override(frame):
     cv.imshow("Removed Frame", removed_frame)
     # mask of red
     # camera detects blue as red
-    red_mask = cv.inRange(hsv, (0, 50, 50), (30, 255, 255))
+    red_mask = cv.inRange(hsv, (0, 50, 50), (60, 255, 255))
     red = cv.bitwise_and(frame, frame, mask=red_mask)
     red_color_percentage = color_percentage(red, red_mask)
 
@@ -158,7 +158,7 @@ def color_mask_override(frame):
 
     # mask of yellow
     # yellow is actually blue
-    yellow_mask = cv.inRange(hsv, (90, 50, 0), (100, 255, 255))
+    yellow_mask = cv.inRange(hsv, (180, 50, 0), (200, 255, 255))
     yellow = cv.bitwise_and(frame, frame, mask=yellow_mask)
     yellow_color_percentage = color_percentage(yellow, yellow_mask)
 
